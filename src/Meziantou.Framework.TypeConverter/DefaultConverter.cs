@@ -224,9 +224,9 @@ namespace Meziantou.Framework.Utilities
         protected virtual bool TryConvert(object input, IFormatProvider provider, out byte[] value)
         {
             byte[] bytes;
-            if (input is Guid)
+            if (input is Guid guid)
             {
-                if (TryConvert((Guid)input, provider, out bytes))
+                if (TryConvert(guid, provider, out bytes))
                 {
                     value = bytes;
                     return true;
