@@ -32,7 +32,7 @@ namespace Meziantou.Framework.Html.Tests
 
         public virtual XPathResultType ReturnType => XPathResultType.String;
 
-        public static T ConvertTo<T>(object argument, CultureInfo ci, T defaultValue)
+        public static T ConvertTo<T>(object argument, T defaultValue)
         {
             if (argument == null)
                 return defaultValue;
@@ -151,7 +151,7 @@ namespace Meziantou.Framework.Html.Tests
 
             if (arg is IEnumerable e)
             {
-                foreach (var o in e)
+                foreach (var _ in e)
                     return false;
 
                 return true;
@@ -159,7 +159,7 @@ namespace Meziantou.Framework.Html.Tests
             return false;
         }
 
-        private class XsltArgument
+        private sealed class XsltArgument
         {
             public XsltArgument(HtmlXsltContext context)
             {
@@ -170,7 +170,7 @@ namespace Meziantou.Framework.Html.Tests
 
             public string Lowercase(object obj)
             {
-                return (string)new Lowercase(Context, "Lowercase").Invoke(null, new[] { obj }, null);
+                return (string)new Lowercase(Context, "Lowercase").Invoke(xsltContext: null, new[] { obj }, docContext: null);
             }
 
             // add methods as needed
@@ -178,22 +178,22 @@ namespace Meziantou.Framework.Html.Tests
 
         public static IXsltContextFunction GetBuiltIn(HtmlXsltContext context, string prefix, string name, XPathResultType[] argTypes)
         {
-            if (name == "lowercase")
+            if (string.Equals(name, "lowercase", StringComparison.Ordinal))
                 return new Lowercase(context, name);
 
             return null;
         }
 
-        public class Lowercase : HtmlXsltFunction
+        public sealed class Lowercase : HtmlXsltFunction
         {
             public Lowercase(HtmlXsltContext context, string name)
-                : base(context, null, name, null)
+                : base(context, prefix: null, name, argTypes: null)
             {
             }
 
             public override object Invoke(XsltContext xsltContext, object[] args, XPathNavigator docContext)
             {
-                return ConvertToString(args, false, null)?.ToLower();
+                return ConvertToString(args, outer: false, separator: null)?.ToLowerInvariant();
             }
         }
     }

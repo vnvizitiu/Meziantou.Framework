@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 
 namespace Meziantou.Framework.Html
 {
@@ -8,6 +9,6 @@ namespace Meziantou.Framework.Html
         None = 0x0,
         InnerRaw = 0x1,
         AutoClosed = 0x2,
-        NoChild = 0x4
+        NoChild = 0x4,
     }
 }

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Meziantou.Framework.Win32.Natives;
 
 namespace Meziantou.Framework.Win32
 {
-    internal class ChangeJournalEntries : IEnumerable<JournalEntry>
+    internal sealed class ChangeJournalEntries : IEnumerable<JournalEntry>
     {
         private readonly ChangeJournal _changeJournal;
         private readonly ReadChangeJournalOptions _options;
@@ -27,7 +28,7 @@ namespace Meziantou.Framework.Win32
             return GetEnumerator();
         }
 
-        private class ChangeJournalEntriesEnumerator : IEnumerator<JournalEntry>
+        private sealed class ChangeJournalEntriesEnumerator : IEnumerator<JournalEntry>
         {
             private const int BufferSize = 8192;
 
@@ -94,17 +95,17 @@ namespace Meziantou.Framework.Win32
                     ReasonMask = Options.ReasonFilter,
                     UsnJournalID = ChangeJournal.Data.ID,
                     ReturnOnlyOnClose = Options.ReturnOnlyOnClose ? (uint)1 : 0,
-                    Timeout = (ulong)Options.Timeout.TotalSeconds
+                    Timeout = (ulong)Options.Timeout.TotalSeconds,
                 };
 
                 var handle = ChangeJournal.ChangeJournalHandle;
-                var entryData = Win32DeviceControl.ControlWithInput(handle.Handle, Win32ControlCode.ReadUsnJournal, ref readData, BufferSize);
+                var entryData = Win32DeviceControl.ControlWithInput(handle, Win32ControlCode.ReadUsnJournal, ref readData, BufferSize);
                 if (entryData.Length > CurrentUSNLength) // There are more data than just data currentUSN.
                 {
                     var bufferHandle = GCHandle.Alloc(entryData, GCHandleType.Pinned);
                     var bufferPointer = bufferHandle.AddrOfPinnedObject();
 
-                    _currentUSN = Marshal.ReadInt64(entryData, 0);
+                    _currentUSN = Marshal.ReadInt64(bufferPointer);
 
                     // Enumerate entries
                     _entries.Clear();
@@ -132,7 +133,9 @@ namespace Meziantou.Framework.Win32
                 var entryPointer = bufferPointer + offset;
                 var nativeEntry = Marshal.PtrToStructure<USN_RECORD_V2>(entryPointer);
                 var filenamePointer = bufferPointer + offset + nativeEntry.FileNameOffset;
-                return new JournalEntry(nativeEntry, Marshal.PtrToStringAuto(filenamePointer));
+                var name = Marshal.PtrToStringAuto(filenamePointer);
+                Debug.Assert(name != null);
+                return new JournalEntry(nativeEntry, name);
             }
         }
     }

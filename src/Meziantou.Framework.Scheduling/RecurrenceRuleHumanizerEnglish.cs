@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Meziantou.Framework.Scheduling
 {
-    public class RecurrenceRuleHumanizerEnglish : RecurrenceRuleHumanizer
+    public sealed class RecurrenceRuleHumanizerEnglish : RecurrenceRuleHumanizer
     {
         [Flags]
         private enum WeekdayHumanTextOptions
@@ -15,10 +15,10 @@ namespace Meziantou.Framework.Scheduling
             AbbrDays = 1,
             AbbrWeekdays = 2,
             AbbrWeekendDays = 4,
-            Plural = 8
+            Plural = 8,
         }
 
-        private static string GetWeekdayHumanText(IList<ByDay> daysOfWeek, WeekdayHumanTextOptions options)
+        private static string? GetWeekdayHumanText(IList<ByDay> daysOfWeek, WeekdayHumanTextOptions options)
         {
             if (daysOfWeek.Count == 0)
                 return null;
@@ -45,7 +45,7 @@ namespace Meziantou.Framework.Scheduling
             if (rrule.EndDate.HasValue)
             {
                 sb.Append(" until ");
-                sb.Append(rrule.EndDate.Value.ToString("MMMM d, yyyy", EnglishCultureInfo));
+                sb.AppendFormat(EnglishCultureInfo, "{0:MMMM d, yyyy}", rrule.EndDate.Value);
             }
         }
 
@@ -75,7 +75,7 @@ namespace Meziantou.Framework.Scheduling
             return ListToHumanText(EnglishCultureInfo, daysOfWeek, separator, lastSeparator);
         }
 
-        private static string GetByMonthdayHumanText(int monthday)
+        private static string? GetByMonthdayHumanText(int monthday)
         {
             if (monthday > 0)
             {
@@ -92,27 +92,23 @@ namespace Meziantou.Framework.Scheduling
 
         private static string GetBySetPosHumanText(int setPosition)
         {
-            switch (setPosition)
+            return setPosition switch
             {
-                case -1:
-                    return "last";
-                case 1:
-                    return "first";
-                case 2:
-                    return "second";
-                case 3:
-                    return "third";
-                case 4:
-                    return "fourth";
-            }
-
-            return Extensions.ToEnglishOrdinal(setPosition);
+                -1 => "last",
+                1 => "first",
+                2 => "second",
+                3 => "third",
+                4 => "fourth",
+                _ => Extensions.ToEnglishOrdinal(setPosition),
+            };
         }
 
         protected override string GetText(DailyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
 
             var sb = new StringBuilder();
             sb.Append("every");
@@ -126,7 +122,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else if (rrule.Interval > 2)
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" days");
             }
@@ -137,8 +133,11 @@ namespace Meziantou.Framework.Scheduling
 
         protected override string GetText(WeeklyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
+
             var sb = new StringBuilder();
             sb.Append("every");
             if (rrule.Interval == 1)
@@ -151,7 +150,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else if (rrule.Interval > 2)
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" weeks");
             }
@@ -168,8 +167,10 @@ namespace Meziantou.Framework.Scheduling
 
         protected override string GetText(MonthlyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
 
             var sb = new StringBuilder();
             sb.Append("every");
@@ -183,7 +184,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else if (rrule.Interval > 2)
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" months");
             }
@@ -208,7 +209,7 @@ namespace Meziantou.Framework.Scheduling
                 {
                     sb.Append("the ");
                     sb.Append(GetBySetPosHumanText(rrule.BySetPositions[0]));
-                    sb.Append(" ");
+                    sb.Append(' ');
                 }
                 sb.Append(GetWeekdayHumanText(rrule.ByWeekDays, options: WeekdayHumanTextOptions.AbbrDays | WeekdayHumanTextOptions.AbbrWeekdays | WeekdayHumanTextOptions.AbbrWeekendDays));
             }
@@ -219,8 +220,10 @@ namespace Meziantou.Framework.Scheduling
 
         protected override string GetText(YearlyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
 
             var sb = new StringBuilder();
             sb.Append("every");
@@ -234,7 +237,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else if (rrule.Interval > 2)
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" years");
             }
@@ -272,7 +275,7 @@ namespace Meziantou.Framework.Scheduling
                 {
                     sb.Append("the ");
                     sb.Append(GetBySetPosHumanText(rrule.BySetPositions[0]));
-                    sb.Append(" ");
+                    sb.Append(' ');
                 }
                 sb.Append(GetWeekdayHumanText(rrule.ByWeekDays, options: WeekdayHumanTextOptions.AbbrDays | WeekdayHumanTextOptions.AbbrWeekdays | WeekdayHumanTextOptions.AbbrWeekendDays));
 

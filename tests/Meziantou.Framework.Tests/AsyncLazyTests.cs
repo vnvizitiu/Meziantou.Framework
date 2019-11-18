@@ -1,17 +1,16 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Meziantou.Framework.Tests
 {
-    [TestClass]
     public class AsyncLazyTests
     {
-        [TestMethod]
+        [Fact]
         public async Task GetValueAsync()
         {
             var count = 0;
-            var lazy = AsyncLazy.Create(async () =>
+            using var lazy = AsyncLazy.Create(async () =>
             {
                 Interlocked.Increment(ref count);
                 await Task.Yield();
@@ -19,10 +18,11 @@ namespace Meziantou.Framework.Tests
             });
 
             var a = lazy.GetValueAsync();
-            var value = await lazy.GetValueAsync();
+            var value = await lazy.GetValueAsync().ConfigureAwait(false);
+            await a.ConfigureAwait(false);
 
-            Assert.AreEqual(1, value);
-            Assert.AreEqual(1, count);
+            Assert.Equal(1, value);
+            Assert.Equal(1, count);
         }
     }
 }

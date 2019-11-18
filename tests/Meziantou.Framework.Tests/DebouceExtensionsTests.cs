@@ -1,47 +1,31 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Meziantou.Framework.Tests
 {
-    [TestClass]
     public class DebouceExtensionsTests
     {
-        [TestMethod]
-        [Ignore("Fails in CI")]
-        public async Task DebounceTests()
+        [Fact]
+        public void Debounce_CallActionsWithArgumentsOfTheLastCall()
         {
-            var count = 0;
-            var debounced = DebounceExtensions.Debounce(() => count++, TimeSpan.FromMilliseconds(30));
-
-            debounced();
-            debounced();
-            await Task.Delay(70).ConfigureAwait(false);
-            Assert.AreEqual(1, count);
-
-            debounced();
-            await Task.Delay(15).ConfigureAwait(false);
-            debounced();
-            await Task.Delay(15).ConfigureAwait(false);
-            debounced();
-            await Task.Delay(15).ConfigureAwait(false);
-            debounced();
-
-            await Task.Delay(50).ConfigureAwait(false);
-            Assert.AreEqual(2, count);
-        }
-
-        [TestMethod]
-        [Ignore("Fails in CI")]
-        public async Task Debounce_CallActionsWithArgumentsOfTheLastCall()
-        {
+            using var resetEvent = new ManualResetEventSlim(false);
             int lastArg = default;
-            var debounced = DebounceExtensions.Debounce<int>(i => lastArg = i, TimeSpan.FromMilliseconds(0));
+            int count = 0;
+            var debounced = DebounceExtensions.Debounce<int>(i =>
+            {
+                lastArg = i;
+                count++;
+                resetEvent.Set();
+            }, TimeSpan.FromMilliseconds(10));
 
             debounced(1);
             debounced(2);
-            await Task.Delay(1).ConfigureAwait(false);
-            Assert.AreEqual(2, lastArg);
+
+            resetEvent.Wait();
+            Assert.Equal(1, count);
+            Assert.Equal(2, lastArg);
         }
     }
 }

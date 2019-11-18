@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace Meziantou.Framework.Threading
 {
-    public class AsyncReaderWriterLock
+    public sealed class AsyncReaderWriterLock
     {
         private readonly Task<Releaser> _readerReleaser;
         private readonly Task<Releaser> _writerReleaser;
@@ -48,7 +49,7 @@ namespace Meziantou.Framework.Threading
                 }
                 else
                 {
-                    var waiter = new TaskCompletionSource<Releaser>();
+                    var waiter = new TaskCompletionSource<Releaser>(TaskCreationOptions.RunContinuationsAsynchronously);
                     _waitingWriters.Enqueue(waiter);
                     return waiter.Task;
                 }
@@ -57,7 +58,7 @@ namespace Meziantou.Framework.Threading
 
         private void ReaderRelease()
         {
-            TaskCompletionSource<Releaser> toWake = null;
+            TaskCompletionSource<Releaser>? toWake = null;
 
             lock (_waitingWriters)
             {
@@ -71,13 +72,13 @@ namespace Meziantou.Framework.Threading
 
             if (toWake != null)
             {
-                toWake.SetResult(new Releaser(this, true));
+                toWake.SetResult(new Releaser(this, writer: true));
             }
         }
 
         private void WriterRelease()
         {
-            TaskCompletionSource<Releaser> toWake = null;
+            TaskCompletionSource<Releaser>? toWake = null;
             var toWakeIsWriter = false;
 
             lock (_waitingWriters)
@@ -106,6 +107,7 @@ namespace Meziantou.Framework.Threading
             }
         }
 
+        [StructLayout(LayoutKind.Auto)]
         public readonly struct Releaser : IDisposable
         {
             private readonly AsyncReaderWriterLock _toRelease;

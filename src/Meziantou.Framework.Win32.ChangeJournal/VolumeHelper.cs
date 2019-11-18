@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 
 namespace Meziantou.Framework.Win32
 {
-    public static class VolumeHelper
+    internal static class VolumeHelper
     {
         internal static string GetValidVolumePath(DriveInfo driveInfo)
         {
@@ -23,7 +24,7 @@ namespace Meziantou.Framework.Win32
 
             name = name
                 .Replace(":", "")
-                .Replace(Path.DirectorySeparatorChar.ToString(), "");
+                .Replace(Path.DirectorySeparatorChar.ToString(CultureInfo.InvariantCulture), "");
 
             return string.Format("\\\\.\\{0}:", name);
         }

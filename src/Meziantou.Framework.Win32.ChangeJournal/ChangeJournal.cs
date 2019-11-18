@@ -7,7 +7,7 @@ using Meziantou.Framework.Win32.Natives;
 
 namespace Meziantou.Framework.Win32
 {
-    public class ChangeJournal : IDisposable
+    public sealed class ChangeJournal : IDisposable
     {
         internal ChangeJournalSafeHandle ChangeJournalHandle { get; }
 
@@ -19,7 +19,7 @@ namespace Meziantou.Framework.Win32
         {
             ChangeJournalHandle = handle;
             Data = ReadJournalDataImpl();
-            Entries = new ChangeJournalEntries(this, new ReadChangeJournalOptions(null, ChangeReason.All, false, TimeSpan.Zero));
+            Entries = new ChangeJournalEntries(this, new ReadChangeJournalOptions(initialUSN: null, ChangeReason.All, returnOnlyOnClose: false, TimeSpan.Zero));
         }
 
         public static ChangeJournal Open(DriveInfo driveInfo)
@@ -28,7 +28,7 @@ namespace Meziantou.Framework.Win32
                 throw new ArgumentNullException(nameof(driveInfo));
 
             var volume = VolumeHelper.GetValidVolumePath(driveInfo);
-            var handle = new ChangeJournalSafeHandle(Win32Methods.CreateFile(volume, FileAccess.Read, FileShare.Read | FileShare.Write, IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero));
+            var handle = Win32Methods.CreateFile(volume, FileAccess.Read, FileShare.Read | FileShare.Write, IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero);
             if (handle.IsInvalid)
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
@@ -37,7 +37,7 @@ namespace Meziantou.Framework.Win32
 
         public IEnumerable<JournalEntry> GetEntries(ChangeReason reasonFilter, bool returnOnlyOnClose, TimeSpan timeout)
         {
-            return new ChangeJournalEntries(this, new ReadChangeJournalOptions(null, reasonFilter, returnOnlyOnClose, timeout));
+            return new ChangeJournalEntries(this, new ReadChangeJournalOptions(initialUSN: null, reasonFilter, returnOnlyOnClose, timeout));
         }
 
         public IEnumerable<JournalEntry> GetEntries(Usn currentUSN, ChangeReason reasonFilter, bool returnOnlyOnClose, TimeSpan timeout)
@@ -58,7 +58,7 @@ namespace Meziantou.Framework.Win32
             try
             {
                 var journalData = new USN_JOURNAL_DATA();
-                Win32DeviceControl.ControlWithOutput(ChangeJournalHandle.Handle, Win32ControlCode.QueryUsnJournal, ref journalData);
+                Win32DeviceControl.ControlWithOutput(ChangeJournalHandle, Win32ControlCode.QueryUsnJournal, ref journalData);
 
                 return new JournalData(journalData);
             }
@@ -78,10 +78,10 @@ namespace Meziantou.Framework.Win32
             var deletionData = new DELETE_USN_JOURNAL_DATA
             {
                 UsnJournalID = Data.ID,
-                DeleteFlags = DeletionFlag.WaitUntilDeleteCompletes
+                DeleteFlags = DeletionFlag.WaitUntilDeleteCompletes,
             };
 
-            Win32DeviceControl.ControlWithInput(ChangeJournalHandle.Handle, Win32ControlCode.CreateUsnJournal, ref deletionData, 0);
+            Win32DeviceControl.ControlWithInput(ChangeJournalHandle, Win32ControlCode.CreateUsnJournal, ref deletionData, 0);
             ReadJournalData();
         }
 
@@ -90,10 +90,10 @@ namespace Meziantou.Framework.Win32
             var creationData = new CREATE_USN_JOURNAL_DATA
             {
                 AllocationDelta = allocationDelta,
-                MaximumSize = maximumSize
+                MaximumSize = maximumSize,
             };
 
-            Win32DeviceControl.ControlWithInput(ChangeJournalHandle.Handle, Win32ControlCode.CreateUsnJournal, ref creationData, 0);
+            Win32DeviceControl.ControlWithInput(ChangeJournalHandle, Win32ControlCode.CreateUsnJournal, ref creationData, 0);
             ReadJournalData();
         }
     }

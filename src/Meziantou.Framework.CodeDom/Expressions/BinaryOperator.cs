@@ -1,4 +1,4 @@
-namespace Meziantou.Framework.CodeDom
+﻿namespace Meziantou.Framework.CodeDom
 {
     public enum BinaryOperator
     {
@@ -20,6 +20,6 @@ namespace Meziantou.Framework.CodeDom
         Modulo,
         ShiftLeft,
         ShiftRight,
-        Xor
+        Xor,
     }
 }

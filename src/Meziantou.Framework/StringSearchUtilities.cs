@@ -37,11 +37,13 @@ namespace Meziantou.Framework
         [Pure]
         public static int Hamming(string word1, string word2)
         {
-            if (word1 == null) throw new ArgumentNullException(nameof(word1));
-            if (word2 == null) throw new ArgumentNullException(nameof(word2));
+            if (word1 == null)
+                throw new ArgumentNullException(nameof(word1));
+            if (word2 == null)
+                throw new ArgumentNullException(nameof(word2));
 
             if (word1.Length != word2.Length)
-                throw new ArgumentException("Strings must have the same length.");
+                throw new ArgumentException("Strings must have the same length.", nameof(word2));
 
             var result = 0;
             for (var i = 0; i < word1.Length; i++)
@@ -65,31 +67,32 @@ namespace Meziantou.Framework
         /// <returns> The hamming distance.</returns>
         [Pure]
         public static int Hamming<T>(IEnumerable<T> word1, IEnumerable<T> word2)
+            where T : notnull
         {
-            if (word1 == null) throw new ArgumentNullException(nameof(word1));
-            if (word2 == null) throw new ArgumentNullException(nameof(word2));
+            if (word1 == null)
+                throw new ArgumentNullException(nameof(word1));
+            if (word2 == null)
+                throw new ArgumentNullException(nameof(word2));
 
             var result = 0;
 
-            using (var enumerator1 = word1.GetEnumerator())
-            using (var enumerator2 = word2.GetEnumerator())
+            using var enumerator1 = word1.GetEnumerator();
+            using var enumerator2 = word2.GetEnumerator();
+            bool firstMoveNext;
+            var secondMoveNext = false;
+
+            while ((firstMoveNext = enumerator1.MoveNext()) && (secondMoveNext = enumerator2.MoveNext()))
             {
-                bool firstMoveNext;
-                var secondMoveNext = false;
-
-                while ((firstMoveNext = enumerator1.MoveNext()) && (secondMoveNext = enumerator2.MoveNext()))
+                if (!enumerator1.Current.Equals(enumerator2.Current))
                 {
-                    if (!enumerator1.Current.Equals(enumerator2.Current))
-                    {
-                        result++;
-                    }
+                    result++;
                 }
-
-                if (firstMoveNext != secondMoveNext)
-                    throw new ArgumentException("Lists must have the same length.");
-
-                return result;
             }
+
+            if (firstMoveNext != secondMoveNext)
+                throw new ArgumentException("Lists must have the same length.", nameof(word2));
+
+            return result;
         }
 
         /// <summary>
@@ -101,10 +104,10 @@ namespace Meziantou.Framework
         [Pure]
         public static int Levenshtein(string word1, string word2)
         {
-            Contract.Requires(word1 != null);
-            Contract.Requires(word2 != null);
-            Contract.Ensures(Contract.Result<int>() >= 0);
-            Contract.Ensures(Contract.Result<int>() <= Math.Max(word1.Length, word2.Length));
+            if (word1 is null)
+                throw new ArgumentNullException(nameof(word1));
+            if (word2 is null)
+                throw new ArgumentNullException(nameof(word2));
 
             if (word1.Length == 0)
             {

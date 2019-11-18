@@ -6,12 +6,12 @@ namespace Meziantou.Framework.CodeDom
 {
     public class TypeReference : Expression
     {
-        private TypeParameter _typeParameter;
-        private TypeDeclaration _typeDeclaration;
-        private string _name;
-        private string _namespace;
-        private CodeObjectCollection<TypeReference> _parameters;
-        private CodeObjectCollection<TypeReference> _typeDeclarationParameters;
+        private TypeParameter? _typeParameter;
+        private TypeDeclaration? _typeDeclaration;
+        private string? _name;
+        private string? _namespace;
+        private CodeObjectCollection<TypeReference>? _parameters;
+        private CodeObjectCollection<TypeReference>? _typeDeclarationParameters;
 
         public TypeReference()
         {
@@ -48,11 +48,12 @@ namespace Meziantou.Framework.CodeDom
             }
         }
 
-        public TypeReference(Type type) : this(type.FullName)
+        public TypeReference(Type type)
+            : this(type.FullName ?? throw new ArgumentException("Type has no FullName", nameof(type)))
         {
         }
 
-        public string Name
+        public string? Name
         {
             get
             {
@@ -72,7 +73,7 @@ namespace Meziantou.Framework.CodeDom
             }
         }
 
-        public string Namespace
+        public string? Namespace
         {
             get
             {
@@ -101,7 +102,7 @@ namespace Meziantou.Framework.CodeDom
                     if (_typeDeclarationParameters == null)
                     {
                         var collection = new CodeObjectCollection<TypeReference>(this);
-                        collection.AddRange(typeParameter.Parameters.Select(p => new TypeReference(p.Name)));
+                        collection.AddRange(typeParameter.Parameters.Select(p => new TypeReference(p.Name ?? throw new InvalidOperationException("TypeReference has no name"))));
                         _typeDeclarationParameters = collection;
                     }
 
@@ -124,7 +125,7 @@ namespace Meziantou.Framework.CodeDom
                 var sb = new StringBuilder();
                 if (!string.IsNullOrEmpty(Namespace))
                 {
-                    sb.Append(Namespace).Append(".");
+                    sb.Append(Namespace).Append('.');
                 }
 
                 sb.Append(Name);
@@ -152,11 +153,14 @@ namespace Meziantou.Framework.CodeDom
 
         public TypeReference Clone()
         {
-            var clone = new TypeReference();
-            clone._name = _name;
-            clone._namespace = _namespace;
-            clone._typeDeclaration = _typeDeclaration;
-            clone._typeParameter = _typeParameter;
+            var clone = new TypeReference
+            {
+                _name = _name,
+                _namespace = _namespace,
+                _typeDeclaration = _typeDeclaration,
+                _typeParameter = _typeParameter,
+            };
+
             if (_parameters != null)
             {
                 clone._parameters = new CodeObjectCollection<TypeReference>(clone);

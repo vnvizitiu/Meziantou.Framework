@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using Meziantou.Framework.Win32.Dialogs;
 
 namespace Meziantou.Framework.Win32.DialogsSamples
 {
@@ -18,7 +17,7 @@ namespace Meziantou.Framework.Win32.DialogsSamples
             var dialog = new OpenFolderDialog
             {
                 Title = "Sample Open Folder dialog",
-                OkButtonLabel = "Test OK"
+                OkButtonLabel = "Test OK",
             };
             dialog.ShowDialog();
         }

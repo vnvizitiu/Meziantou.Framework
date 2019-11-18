@@ -11,9 +11,10 @@ namespace Meziantou.Framework
         /// </summary>
         /// <param name="assembly">The assembly. May not be null.</param>
         /// <returns>The version represented as a string. May not be null.</returns>
-        public static string GetInformationalVersion(this Assembly assembly)
+        public static string? GetInformationalVersion(this Assembly assembly)
         {
-            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+            if (assembly == null)
+                throw new ArgumentNullException(nameof(assembly));
 
             var attr = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
             if (attr != null)
@@ -31,7 +32,8 @@ namespace Meziantou.Framework
         /// <returns>A valid date time or null if an error occurred.</returns>
         public static DateTime? GetLinkerTimestampUtc(this Assembly assembly)
         {
-            if (assembly == null) throw new ArgumentNullException(nameof(assembly));
+            if (assembly == null)
+                throw new ArgumentNullException(nameof(assembly));
 
             try
             {
@@ -71,7 +73,7 @@ namespace Meziantou.Framework
 
                 using (var file = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    file.Read(bytes, 0, bytes.Length);
+                    file.ReadUntilCountOrEnd(bytes, 0, bytes.Length);
                 }
 
                 var headerPos = BitConverter.ToInt32(bytes, PeHeaderOffset);

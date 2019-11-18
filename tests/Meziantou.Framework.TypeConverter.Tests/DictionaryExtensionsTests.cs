@@ -1,54 +1,57 @@
-﻿using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using System.Collections.Generic;
+using Xunit;
 
 namespace Meziantou.Framework.Tests
 {
-    [TestClass]
-    public class DictionaryExtensionsTests
+    public static class DictionaryExtensionsTests
     {
-        public void GetValue_KeyExists()
+        [Fact]
+        public static void GetValue_KeyExists()
         {
             // Arrange
-            var dictionary = new Dictionary<string, object>
+            var dictionary = new Dictionary<string, object>(StringComparer.Ordinal)
             {
-                { "test", 42 }
+                { "test", 42 },
             };
 
             // Act
             var actual = dictionary.GetValueOrDefault("test", "");
 
             // Assert
-            Assert.AreEqual("42", actual);
+            Assert.Equal("42", actual);
         }
 
-        public void GetValue_KeyNotExists()
+        [Fact]
+        public static void GetValue_KeyNotExists()
         {
             // Arrange
-            var dictionary = new Dictionary<string, object>
+            var dictionary = new Dictionary<string, object>(StringComparer.Ordinal)
             {
-                { "test", 42 }
+                { "test", 42 },
             };
 
             // Act
             var actual = dictionary.GetValueOrDefault("unknown", "");
 
             // Assert
-            Assert.AreEqual("", actual);
+            Assert.Equal("", actual);
         }
 
-        public void GetValue_KeyNotConvertible()
+        [Fact]
+        public static void GetValue_KeyNotConvertible()
         {
             // Arrange
-            var dictionary = new Dictionary<string, object>
+            var dictionary = new Dictionary<string, object>(StringComparer.Ordinal)
             {
-                { "test", "aaa" }
+                { "test", "aaa" },
             };
 
             // Act
             var actual = dictionary.GetValueOrDefault("test", 0);
 
             // Assert
-            Assert.AreEqual(0, actual);
+            Assert.Equal(0, actual);
         }
     }
 }

@@ -6,7 +6,7 @@ using Meziantou.Framework.Win32.Natives;
 
 namespace Meziantou.Framework.Win32
 {
-    public class RestartManager : IDisposable
+    public sealed class RestartManager : IDisposable
     {
         private int SessionHandle { get; }
         public string SessionKey { get; }
@@ -22,7 +22,7 @@ namespace Meziantou.Framework.Win32
             var sessionKey = Guid.NewGuid().ToString();
             var result = NativeMethods.RmStartSession(out var handle, 0, strSessionKey: sessionKey);
             if (result != RmResult.ERROR_SUCCESS)
-                throw new Win32Exception((int)result, "RmStartSession failed");
+                throw new Win32Exception((int)result, $"RmStartSession failed ({result})");
 
             return new RestartManager(handle, sessionKey);
         }
@@ -31,28 +31,30 @@ namespace Meziantou.Framework.Win32
         {
             var result = NativeMethods.RmJoinSession(out var handle, sessionKey);
             if (result != RmResult.ERROR_SUCCESS)
-                throw new Win32Exception((int)result, "RmStartSession failed");
+                throw new Win32Exception((int)result, $"RmStartSession failed ({result})");
 
             return new RestartManager(handle, sessionKey);
         }
 
         public void RegisterFile(string path)
         {
-            if (path == null) throw new ArgumentNullException(nameof(path));
+            if (path == null)
+                throw new ArgumentNullException(nameof(path));
 
             string[] resources = { path };
-            var result = NativeMethods.RmRegisterResources(SessionHandle, 1, resources, 0, null, 0, null);
+            var result = NativeMethods.RmRegisterResources(SessionHandle, (uint)resources.Length, resources, 0, rgApplications: null, 0, rgsServiceNames: null);
             if (result != RmResult.ERROR_SUCCESS)
-                throw new Win32Exception((int)result, "RmRegisterResources failed");
+                throw new Win32Exception((int)result, $"RmRegisterResources failed ({result})");
         }
 
         public void RegisterFiles(string[] paths)
         {
-            if (paths == null) throw new ArgumentNullException(nameof(paths));
+            if (paths == null)
+                throw new ArgumentNullException(nameof(paths));
 
-            var result = NativeMethods.RmRegisterResources(SessionHandle, (uint)paths.LongLength, paths, 0, null, 0, null);
+            var result = NativeMethods.RmRegisterResources(SessionHandle, (uint)paths.LongLength, paths, 0, rgApplications: null, 0, rgsServiceNames: null);
             if (result != RmResult.ERROR_SUCCESS)
-                throw new Win32Exception((int)result, "RmRegisterResources failed");
+                throw new Win32Exception((int)result, $"RmRegisterResources failed ({result})");
         }
 
         public bool IsResourcesLocked()
@@ -68,7 +70,7 @@ namespace Meziantou.Framework.Win32
                 }
                 else
                 {
-                    throw new Win32Exception((int)result, "RmGetList failed");
+                    throw new Win32Exception((int)result, $"RmGetList failed ({result})");
                 }
             }
         }
@@ -104,33 +106,33 @@ namespace Meziantou.Framework.Win32
                 }
                 else
                 {
-                    throw new Win32Exception((int)result, "RmGetList failed");
+                    throw new Win32Exception((int)result, $"RmGetList failed ({result})");
                 }
             }
         }
 
         public void Shutdown(RmShutdownType action)
         {
-            Shutdown(action, null);
+            Shutdown(action, statusCallback: null);
         }
 
-        public void Shutdown(RmShutdownType action, RmWriteStatusCallback statusCallback)
+        public void Shutdown(RmShutdownType action, RmWriteStatusCallback? statusCallback)
         {
             var result = NativeMethods.RmShutdown(SessionHandle, action, statusCallback);
             if (result != RmResult.ERROR_SUCCESS)
-                throw new Win32Exception((int)result, "RmShutdown failed");
+                throw new Win32Exception((int)result, $"RmShutdown failed ({result})");
         }
 
         public void Restart()
         {
-            Restart(null);
+            Restart(statusCallback: null);
         }
 
-        public void Restart(RmWriteStatusCallback statusCallback)
+        public void Restart(RmWriteStatusCallback? statusCallback)
         {
             var result = NativeMethods.RmRestart(SessionHandle, 0, statusCallback);
             if (result != RmResult.ERROR_SUCCESS)
-                throw new Win32Exception((int)result, "RmShutdown failed");
+                throw new Win32Exception((int)result, $"RmShutdown failed ({result})");
         }
 
         public void Dispose()
@@ -139,26 +141,22 @@ namespace Meziantou.Framework.Win32
             {
                 var result = NativeMethods.RmEndSession(SessionHandle);
                 if (result != RmResult.ERROR_SUCCESS)
-                    throw new Win32Exception((int)result, "RmEndSession failed");
+                    throw new Win32Exception((int)result, $"RmEndSession failed ({result})");
             }
         }
 
         public static bool IsFileLocked(string path)
         {
-            using (var restartManager = CreateSession())
-            {
-                restartManager.RegisterFile(path);
-                return restartManager.IsResourcesLocked();
-            }
+            using var restartManager = CreateSession();
+            restartManager.RegisterFile(path);
+            return restartManager.IsResourcesLocked();
         }
 
         public static IReadOnlyList<Process> GetProcessesLockingFile(string path)
         {
-            using (var restartManager = CreateSession())
-            {
-                restartManager.RegisterFile(path);
-                return restartManager.GetProcessesLockingResources();
-            }
+            using var restartManager = CreateSession();
+            restartManager.RegisterFile(path);
+            return restartManager.GetProcessesLockingResources();
         }
     }
 }

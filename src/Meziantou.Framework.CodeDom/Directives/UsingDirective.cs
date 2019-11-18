@@ -3,15 +3,15 @@
     public class UsingDirective : Directive
     {
         public UsingDirective()
-            : this(null)
+            : this(ns: null)
         {
         }
 
-        public UsingDirective(string ns)
+        public UsingDirective(string? ns)
         {
             Namespace = ns;
         }
 
-        public string Namespace { get; set; }
+        public string? Namespace { get; set; }
     }
 }

@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace Meziantou.Framework.Scheduling
 {
-    public class Calendar
+    public sealed class Calendar
     {
         public IDictionary<string, string> AdditionalProperties { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -14,16 +14,15 @@ namespace Meziantou.Framework.Scheduling
 
         public void ToIcs(Stream stream)
         {
-            var encoding = new UTF8Encoding(false);
-            using (TextWriter writer = new StreamWriter(stream, encoding))
-            {
-                ToIcs(writer);
-            }
+            var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+            using TextWriter writer = new StreamWriter(stream, encoding, bufferSize: 1024, leaveOpen: true);
+            ToIcs(writer);
         }
 
         public void ToIcs(TextWriter writer)
         {
-            if (writer == null) throw new ArgumentNullException(nameof(writer));
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
             /*
             BEGIN:VCALENDAR
 
@@ -33,8 +32,8 @@ namespace Meziantou.Framework.Scheduling
 
             BEGIN:VEVENT
             STATUS:CONFIRMED
-            ORGANIZER:MAILTO:sflogshosting@softfluent.com
-            ATTENDEE:MAILTO:gba@softfluent.com
+            ORGANIZER:MAILTO:contact@meziantou.net
+            ATTENDEE:MAILTO:contact@meziantou.net
             CREATED:20141208T100900Z
             DTSTAMP:20141208T100900Z
             LAST-MODIFIED:19960817T133000Z
@@ -71,7 +70,7 @@ namespace Meziantou.Framework.Scheduling
                     writer.WriteLine("UID:" + @event.Id);
 
                 writer.WriteLine("STATUS:" + Utilities.StatusToString(@event.Status));
-                if (@event.Organizer.Address != null)
+                if (@event.Organizer?.Address != null)
                     writer.WriteLine("ORGANIZER:" + @event.Organizer.Address);
 
                 foreach (var attendee in @event.Attendees)
@@ -112,11 +111,9 @@ namespace Meziantou.Framework.Scheduling
 
         public string ToIcs()
         {
-            using (var writer = new StringWriter())
-            {
-                ToIcs(writer);
-                return writer.ToString();
-            }
+            using var writer = new StringWriter();
+            ToIcs(writer);
+            return writer.ToString();
         }
     }
 }

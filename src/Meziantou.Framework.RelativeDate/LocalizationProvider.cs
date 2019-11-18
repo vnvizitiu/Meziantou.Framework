@@ -6,12 +6,12 @@ namespace Meziantou.Framework
 {
     public class LocalizationProvider : ILocalizationProvider
     {
-        private static ILocalizationProvider _current = new LocalizationProvider();
+        private static ILocalizationProvider s_current = new LocalizationProvider();
 
         public static ILocalizationProvider Current
         {
-            get => _current;
-            set => _current = value ?? throw new ArgumentNullException(nameof(value));
+            get => s_current;
+            set => s_current = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         private readonly Dictionary<CultureInfo, IReadOnlyDictionary<string, string>> _cultures;
@@ -20,7 +20,7 @@ namespace Meziantou.Framework
         {
             _cultures = new Dictionary<CultureInfo, IReadOnlyDictionary<string, string>>
             {
-                [CultureInfo.InvariantCulture] = new Dictionary<string, string>
+                [CultureInfo.InvariantCulture] = new Dictionary<string, string>(StringComparer.Ordinal)
                 {
                     { "Now", "now" },
                     { "OneSecondAgo", "one second ago" },
@@ -37,7 +37,7 @@ namespace Meziantou.Framework
                     { "ManyYearsAgo", "{0} years ago" },
                 },
 
-                [CultureInfo.GetCultureInfo("fr")] = new Dictionary<string, string>
+                [CultureInfo.GetCultureInfo("fr")] = new Dictionary<string, string>(StringComparer.Ordinal)
                 {
                     { "Now", "maintenant" },
                     { "OneSecondAgo", "il y a une seconde" },
@@ -52,13 +52,13 @@ namespace Meziantou.Framework
                     { "ManyMonthsAgo", "il y a {0} mois" },
                     { "OneYearAgo", "il y a un an" },
                     { "ManyYearsAgo", "il y a {0} ans" },
-                }
+                },
             };
         }
 
-        public string GetString(string name, CultureInfo culture)
+        public string GetString(string name, CultureInfo? culture)
         {
-            culture = culture ?? CultureInfo.InvariantCulture;
+            culture ??= CultureInfo.InvariantCulture;
 
             if (!_cultures.TryGetValue(culture, out var values))
             {
@@ -71,7 +71,7 @@ namespace Meziantou.Framework
             if (values.TryGetValue(name, out var value))
                 return value;
 
-            return null;
+            throw new ArgumentException($"'{name}' is not supported", nameof(name));
         }
 
         public void Set(CultureInfo culture, IReadOnlyDictionary<string, string> values)
@@ -79,10 +79,7 @@ namespace Meziantou.Framework
             if (culture == null)
                 throw new ArgumentNullException(nameof(culture));
 
-            if (values == null)
-                throw new ArgumentNullException(nameof(values));
-
-            _cultures[culture] = values;
+            _cultures[culture] = values ?? throw new ArgumentNullException(nameof(values));
         }
 
         public void Remove(CultureInfo culture)

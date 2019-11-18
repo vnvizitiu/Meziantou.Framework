@@ -7,39 +7,39 @@ namespace Meziantou.Framework.CodeDom
 {
     public partial class CSharpCodeGenerator
     {
-        private static readonly IDictionary<string, string> _predefinedTypes;
-        private static readonly string[] _keywords;
+        private static readonly IDictionary<string, string> s_predefinedTypes;
+        private static readonly string[] s_keywords;
 
         static CSharpCodeGenerator()
         {
-            _predefinedTypes = new Dictionary<string, string>
+            s_predefinedTypes = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                [typeof(bool).FullName] = "bool",
-                [typeof(byte).FullName] = "byte",
-                [typeof(char).FullName] = "char",
-                [typeof(decimal).FullName] = "decimal",
-                [typeof(double).FullName] = "double",
-                [typeof(float).FullName] = "float",
-                [typeof(int).FullName] = "int",
-                [typeof(long).FullName] = "long",
-                [typeof(object).FullName] = "object",
-                [typeof(sbyte).FullName] = "sbyte",
-                [typeof(short).FullName] = "short",
-                [typeof(string).FullName] = "string",
-                [typeof(uint).FullName] = "uint",
-                [typeof(ulong).FullName] = "ulong",
-                [typeof(ushort).FullName] = "ushort",
-                [typeof(void).FullName] = "void"
+                [typeof(bool).FullName!] = "bool",
+                [typeof(byte).FullName!] = "byte",
+                [typeof(char).FullName!] = "char",
+                [typeof(decimal).FullName!] = "decimal",
+                [typeof(double).FullName!] = "double",
+                [typeof(float).FullName!] = "float",
+                [typeof(int).FullName!] = "int",
+                [typeof(long).FullName!] = "long",
+                [typeof(object).FullName!] = "object",
+                [typeof(sbyte).FullName!] = "sbyte",
+                [typeof(short).FullName!] = "short",
+                [typeof(string).FullName!] = "string",
+                [typeof(uint).FullName!] = "uint",
+                [typeof(ulong).FullName!] = "ulong",
+                [typeof(ushort).FullName!] = "ushort",
+                [typeof(void).FullName!] = "void",
             };
 
-            _keywords = new string[]
+            s_keywords = new string[]
             {
                 "bool", "byte", "sbyte", "short", "ushort", "int", "uint", "long", "ulong", "double", "float", "decimal",
                 "string", "char", "void", "object", "typeof", "sizeof", "null", "true", "false", "if", "else", "while", "for", "foreach", "do", "switch",
                 "case", "default", "lock", "try", "throw", "catch", "finally", "goto", "break", "continue", "return", "public", "private", "internal",
                 "protected", "static", "readonly", "sealed", "const", "fixed", "stackalloc", "volatile", "new", "override", "abstract", "virtual",
                 "event", "extern", "ref", "out", "in", "is", "as", "params", "__arglist", "__makeref", "__reftype", "__refvalue", "this", "base",
-                "namespace", "using", "class", "struct", "interface", "enum", "delegate", "checked", "unchecked", "unsafe", "operator", "implicit", "explicit"
+                "namespace", "using", "class", "struct", "interface", "enum", "delegate", "checked", "unchecked", "unsafe", "operator", "implicit", "explicit",
             };
         }
 
@@ -48,11 +48,9 @@ namespace Meziantou.Framework.CodeDom
             if (codeObject == null)
                 throw new ArgumentNullException(nameof(codeObject));
 
-            using (var sw = new StringWriter())
-            {
-                Write(sw, codeObject);
-                return sw.ToString();
-            }
+            using var sw = new StringWriter();
+            Write(sw, codeObject);
+            return sw.ToString();
         }
 
         public void Write(TextWriter writer, CodeObject codeObject)
@@ -62,12 +60,12 @@ namespace Meziantou.Framework.CodeDom
             if (codeObject == null)
                 throw new ArgumentNullException(nameof(codeObject));
 
-            using (var indentedTextWriter = new IndentedTextWriter(writer, IndentedTextWriter.DefaultTabString, false))
+            using var indentedTextWriter = new IndentedTextWriter(writer, IndentedTextWriter.DefaultTabString, closeWriter: false)
             {
-                indentedTextWriter.NewLine = "\n";
+                NewLine = "\n",
+            };
 
-                Write(indentedTextWriter, codeObject);
-            }
+            Write(indentedTextWriter, codeObject);
         }
 
         public void Write(IndentedTextWriter writer, CodeObject codeObject)
@@ -571,7 +569,7 @@ namespace Meziantou.Framework.CodeDom
 
             writer.WriteLine("{");
             writer.Indent++;
-            WriteLines(writer, type.Members.Cast<CodeObject>().Concat(type.Types), null);
+            WriteLines(writer, type.Members.Cast<CodeObject>().Concat(type.Types), endOfLine: null);
             writer.Indent--;
             writer.WriteLine("}");
         }
@@ -594,7 +592,7 @@ namespace Meziantou.Framework.CodeDom
 
             writer.WriteLine("{");
             writer.Indent++;
-            WriteLines(writer, type.Members.Cast<CodeObject>().Concat(type.Types), null);
+            WriteLines(writer, type.Members.Cast<CodeObject>().Concat(type.Types), endOfLine: null);
             writer.Indent--;
             writer.WriteLine("}");
         }
@@ -734,7 +732,7 @@ namespace Meziantou.Framework.CodeDom
             writer.Write("]");
             WriteAfterComments(writer, attribute);
 
-            int GetSortOrder(CustomAttributeArgument arg)
+            static int GetSortOrder(CustomAttributeArgument arg)
             {
                 if (arg.PropertyName == null)
                     return 0;
@@ -852,11 +850,11 @@ namespace Meziantou.Framework.CodeDom
             writer.Write(": ");
             switch (initializer)
             {
-                case ConstructorThisInitializer o:
+                case ConstructorThisInitializer _:
                     writer.Write("this");
                     break;
 
-                case ConstructorBaseInitializer o:
+                case ConstructorBaseInitializer _:
                     writer.Write("base");
                     break;
 
@@ -944,55 +942,34 @@ namespace Meziantou.Framework.CodeDom
 
         protected virtual void Write(IndentedTextWriter writer, XmlComment comment)
         {
-            WriteDocumentationComment(writer, comment.Element.ToString());
+            WriteDocumentationComment(writer, comment.Element?.ToString());
         }
 
         protected virtual string Write(BinaryOperator op)
         {
-            switch (op)
+            return op switch
             {
-                case BinaryOperator.None:
-                    return "";
-                case BinaryOperator.Equals:
-                    return "==";
-                case BinaryOperator.NotEquals:
-                    return "!=";
-                case BinaryOperator.LessThan:
-                    return "<";
-                case BinaryOperator.LessThanOrEqual:
-                    return "<=";
-                case BinaryOperator.GreaterThan:
-                    return ">";
-                case BinaryOperator.GreaterThanOrEqual:
-                    return ">=";
-                case BinaryOperator.Or:
-                    return "||";
-                case BinaryOperator.BitwiseOr:
-                    return "|";
-                case BinaryOperator.And:
-                    return "&&";
-                case BinaryOperator.BitwiseAnd:
-                    return "&";
-                case BinaryOperator.Add:
-                    return "+";
-                case BinaryOperator.Substract:
-                    return "-";
-                case BinaryOperator.Multiply:
-                    return "*";
-                case BinaryOperator.Divide:
-                    return "/";
-                case BinaryOperator.Modulo:
-                    return "%";
-                case BinaryOperator.ShiftLeft:
-                    return "<<";
-                case BinaryOperator.ShiftRight:
-                    return ">>";
-                case BinaryOperator.Xor:
-                    return "^";
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(op));
-            }
+                BinaryOperator.None => "",
+                BinaryOperator.Equals => "==",
+                BinaryOperator.NotEquals => "!=",
+                BinaryOperator.LessThan => "<",
+                BinaryOperator.LessThanOrEqual => "<=",
+                BinaryOperator.GreaterThan => ">",
+                BinaryOperator.GreaterThanOrEqual => ">=",
+                BinaryOperator.Or => "||",
+                BinaryOperator.BitwiseOr => "|",
+                BinaryOperator.And => "&&",
+                BinaryOperator.BitwiseAnd => "&",
+                BinaryOperator.Add => "+",
+                BinaryOperator.Substract => "-",
+                BinaryOperator.Multiply => "*",
+                BinaryOperator.Divide => "/",
+                BinaryOperator.Modulo => "%",
+                BinaryOperator.ShiftLeft => "<<",
+                BinaryOperator.ShiftRight => ">>",
+                BinaryOperator.Xor => "^",
+                _ => throw new ArgumentOutOfRangeException(nameof(op)),
+            };
         }
 
         protected virtual bool IsPrefixOperator(UnaryOperator op)
@@ -1045,35 +1022,27 @@ namespace Meziantou.Framework.CodeDom
 
         protected virtual string Write(CustomAttributeTarget target)
         {
-            switch (target)
+            return target switch
             {
-                case CustomAttributeTarget.Assembly:
-                    return "assembly";
-                case CustomAttributeTarget.Module:
-                    return "module";
-                case CustomAttributeTarget.Field:
-                    return "field";
-                case CustomAttributeTarget.Event:
-                    return "event";
-                case CustomAttributeTarget.Method:
-                    return "method";
-                case CustomAttributeTarget.Param:
-                    return "param";
-                case CustomAttributeTarget.Property:
-                    return "property";
-                case CustomAttributeTarget.Return:
-                    return "return";
-                case CustomAttributeTarget.Type:
-                    return "type";
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(target));
-            }
+                CustomAttributeTarget.Assembly => "assembly",
+                CustomAttributeTarget.Module => "module",
+                CustomAttributeTarget.Field => "field",
+                CustomAttributeTarget.Event => "event",
+                CustomAttributeTarget.Method => "method",
+                CustomAttributeTarget.Param => "param",
+                CustomAttributeTarget.Property => "property",
+                CustomAttributeTarget.Return => "return",
+                CustomAttributeTarget.Type => "type",
+                _ => throw new ArgumentOutOfRangeException(nameof(target)),
+            };
         }
 
-        protected virtual void WriteIdentifier(IndentedTextWriter writer, string name)
+        protected virtual void WriteIdentifier(IndentedTextWriter writer, string? name)
         {
-            if (_keywords.Contains(name))
+            if (name == null)
+                return;
+
+            if (s_keywords.Contains(name, StringComparer.Ordinal))
             {
                 writer.Write("@");
             }
@@ -1081,7 +1050,7 @@ namespace Meziantou.Framework.CodeDom
             writer.Write(name);
         }
 
-        protected virtual void Write(IndentedTextWriter writer, StatementCollection statements)
+        protected virtual void Write(IndentedTextWriter writer, StatementCollection? statements)
         {
             writer.WriteLine("{");
             writer.Indent++;
@@ -1105,7 +1074,7 @@ namespace Meziantou.Framework.CodeDom
             writer.Indent--;
             writer.WriteLine("}");
 
-            bool IsBlockStatement(Statement statement)
+            static bool IsBlockStatement(Statement statement)
             {
                 return statement is ConditionStatement
                     || statement is IterationStatement
@@ -1131,29 +1100,27 @@ namespace Meziantou.Framework.CodeDom
             Write(writer, orderedConstraints, ", ");
         }
 
-        protected virtual void WriteDocumentationComment(IndentedTextWriter writer, string comment)
+        protected virtual void WriteDocumentationComment(IndentedTextWriter writer, string? comment)
         {
             if (comment == null)
                 return;
 
-            using (var sr = new StringReader(comment))
+            using var sr = new StringReader(comment);
+            string? line;
+            while ((line = sr.ReadLine()) != null)
             {
-                string line;
-                while ((line = sr.ReadLine()) != null)
+                if (string.IsNullOrEmpty(line))
                 {
-                    if (string.IsNullOrEmpty(line))
-                    {
-                        writer.WriteLine("///");
-                    }
-                    else
-                    {
-                        writer.WriteLine("/// " + line);
-                    }
+                    writer.WriteLine("///");
+                }
+                else
+                {
+                    writer.WriteLine("/// " + line);
                 }
             }
         }
 
-        protected virtual void WriteLineComment(IndentedTextWriter writer, string comment)
+        protected virtual void WriteLineComment(IndentedTextWriter writer, string? comment)
         {
             if (comment == null)
             {
@@ -1161,24 +1128,22 @@ namespace Meziantou.Framework.CodeDom
                 return;
             }
 
-            using (var sr = new StringReader(comment))
+            using var sr = new StringReader(comment);
+            string? line;
+            while ((line = sr.ReadLine()) != null)
             {
-                string line;
-                while ((line = sr.ReadLine()) != null)
+                if (string.IsNullOrEmpty(line))
                 {
-                    if (string.IsNullOrEmpty(line))
-                    {
-                        writer.WriteLine("//");
-                    }
-                    else
-                    {
-                        writer.WriteLine("// " + line);
-                    }
+                    writer.WriteLine("//");
+                }
+                else
+                {
+                    writer.WriteLine("// " + line);
                 }
             }
         }
 
-        protected virtual bool TryWriteInlineComment(IndentedTextWriter writer, string comment)
+        protected virtual bool TryWriteInlineComment(IndentedTextWriter writer, string? comment)
         {
             if (comment == null)
             {
@@ -1260,7 +1225,7 @@ namespace Meziantou.Framework.CodeDom
             }
         }
 
-        private void WriteGenericParameters(IndentedTextWriter writer, IParametrableType type)
+        private static void WriteGenericParameters(IndentedTextWriter writer, IParametrableType type)
         {
             if (type.Parameters.Any())
             {
@@ -1284,7 +1249,7 @@ namespace Meziantou.Framework.CodeDom
             writer.Indent--;
         }
 
-        private List<TypeReference> GetBaseTypes(IInheritanceParameters c)
+        private static List<TypeReference> GetBaseTypes(IInheritanceParameters c)
         {
             var list = new List<TypeReference>();
             if (c.BaseType != null)
@@ -1300,7 +1265,7 @@ namespace Meziantou.Framework.CodeDom
             return list;
         }
 
-        private void WriteValues<T>(IndentedTextWriter writer, IEnumerable<T> objects, string separator)
+        private static void WriteValues<T>(IndentedTextWriter writer, IEnumerable<T> objects, string separator)
         {
             var first = true;
             foreach (var o in objects)
@@ -1330,7 +1295,7 @@ namespace Meziantou.Framework.CodeDom
             }
         }
 
-        private void WriteLines<T>(IndentedTextWriter writer, IEnumerable<T> objects, string endOfLine) where T : CodeObject
+        private void WriteLines<T>(IndentedTextWriter writer, IEnumerable<T> objects, string? endOfLine) where T : CodeObject
         {
             var first = true;
             foreach (var o in objects)

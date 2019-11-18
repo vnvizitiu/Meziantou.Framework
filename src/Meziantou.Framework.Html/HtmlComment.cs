@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Xml;
@@ -6,11 +7,11 @@ using System.Xml;
 namespace Meziantou.Framework.Html
 {
     [DebuggerDisplay("'{Value}'")]
-    public class HtmlComment : HtmlNode
+    public sealed class HtmlComment : HtmlNode
     {
         private string _value;
 
-        protected internal HtmlComment(HtmlDocument ownerDocument)
+        internal HtmlComment(HtmlDocument ownerDocument)
             : base(string.Empty, "#comment", string.Empty, ownerDocument)
         {
         }
@@ -31,7 +32,7 @@ namespace Meziantou.Framework.Html
             get => Value;
             set
             {
-                if (value != Value)
+                if (!string.Equals(value, Value, StringComparison.Ordinal))
                 {
                     Value = value;
                     OnPropertyChanged();
@@ -44,7 +45,7 @@ namespace Meziantou.Framework.Html
             get => _value;
             set
             {
-                if (value != _value)
+                if (!string.Equals(value, _value, StringComparison.Ordinal))
                 {
                     _value = value;
                     OnPropertyChanged();

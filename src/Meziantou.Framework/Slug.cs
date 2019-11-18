@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 
@@ -6,12 +7,14 @@ namespace Meziantou.Framework
 {
     public static class Slug
     {
-        public static string Create(string text)
+        [return: NotNullIfNotNull(parameterName: "text")]
+        public static string? Create(string? text)
         {
-            return Create(text, null);
+            return Create(text, options: null);
         }
 
-        public static string Create(string text, SlugOptions options)
+        [return: NotNullIfNotNull(parameterName: "text")]
+        public static string? Create(string? text, SlugOptions? options)
         {
             if (text == null)
                 return null;
@@ -40,7 +43,7 @@ namespace Meziantou.Framework
                         case UnicodeCategory.UppercaseLetter:
                             if (options.ToLower)
                             {
-                                ch = options.Culture != null ? char.ToLower(ch) : char.ToLowerInvariant(ch);
+                                ch = options.Culture != null ? char.ToLower(ch, options.Culture) : char.ToLowerInvariant(ch);
                             }
                             sb.Append(options.Replace(ch));
                             break;
@@ -48,7 +51,7 @@ namespace Meziantou.Framework
                         case UnicodeCategory.LowercaseLetter:
                             if (options.ToUpper)
                             {
-                                ch = options.Culture != null ? char.ToUpper(ch) : char.ToUpperInvariant(ch);
+                                ch = options.Culture != null ? char.ToUpper(ch, options.Culture) : char.ToUpperInvariant(ch);
                             }
                             sb.Append(options.Replace(ch));
                             break;
@@ -73,7 +76,7 @@ namespace Meziantou.Framework
                 text = text.Substring(0, options.MaximumLength);
             }
 
-            if (!options.CanEndWithSeparator && options.Separator != null && text.EndsWith(options.Separator))
+            if (!options.CanEndWithSeparator && options.Separator != null && text.EndsWith(options.Separator, StringComparison.Ordinal))
             {
                 text = text.Substring(0, text.Length - options.Separator.Length);
             }

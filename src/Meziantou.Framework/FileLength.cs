@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Meziantou.Framework
 {
+    [StructLayout(LayoutKind.Auto)]
     public readonly struct FileLength : IEquatable<FileLength>, IComparable, IComparable<FileLength>, IFormattable
     {
         public FileLength(long length)
@@ -18,7 +20,7 @@ namespace Meziantou.Framework
 
         public long Length { get; }
 
-        public override bool Equals(object obj) => obj is FileLength fileLength && Equals(fileLength);
+        public override bool Equals(object? obj) => obj is FileLength fileLength && Equals(fileLength);
 
         public bool Equals(FileLength other) => Length == other.Length;
 
@@ -26,15 +28,18 @@ namespace Meziantou.Framework
 
         public int CompareTo(FileLength other) => Length.CompareTo(other.Length);
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
+            if (obj == null)
+                return 1;
+
             var fileLength = (FileLength)obj;
             return CompareTo(fileLength);
         }
 
-        public override string ToString() => ToString(null, null);
+        public override string ToString() => ToString(format: null, formatProvider: null);
 
-        public string ToString(string format, IFormatProvider formatProvider)
+        public string ToString(string? format, IFormatProvider? formatProvider)
         {
             if (string.IsNullOrEmpty(format))
                 return Length.ToString(formatProvider);
@@ -42,7 +47,7 @@ namespace Meziantou.Framework
             var index = -1;
             for (var i = 0; i < format.Length; i++)
             {
-                char c = format[i];
+                var c = format[i];
                 if (c > '0' && c < '9')
                 {
                     index = i;
@@ -62,13 +67,13 @@ namespace Meziantou.Framework
             var numberFormat = "G";
             if (index > 0)
             {
-                if (!int.TryParse(format.Substring(index), out var number))
+                if (!int.TryParse(format.Substring(index), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
                     throw new ArgumentException("format is invalid", nameof(format));
 
                 numberFormat = "F" + number.ToString(CultureInfo.InvariantCulture);
             }
 
-            return GetLength(unit).ToString(numberFormat);
+            return GetLength(unit).ToString(numberFormat, formatProvider);
         }
 
         public double GetLength(FileLengthUnit unit)

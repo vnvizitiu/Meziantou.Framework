@@ -2,9 +2,9 @@
 {
     public class DelegateDeclaration : TypeDeclaration, IParametrableType
     {
-        private TypeReference _returnType;
+        private TypeReference? _returnType;
 
-        public TypeReference ReturnType
+        public TypeReference? ReturnType
         {
             get => _returnType;
             set => SetParent(ref _returnType, value);
@@ -14,11 +14,11 @@
         public CodeObjectCollection<MethodArgumentDeclaration> Arguments { get; }
 
         public DelegateDeclaration()
-            : this(null)
+            : this(name: null)
         {
         }
 
-        public DelegateDeclaration(string name)
+        public DelegateDeclaration(string? name)
         {
             Arguments = new CodeObjectCollection<MethodArgumentDeclaration>(this);
             Parameters = new CodeObjectCollection<TypeParameter>(this);

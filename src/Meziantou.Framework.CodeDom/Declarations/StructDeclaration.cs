@@ -1,13 +1,13 @@
-namespace Meziantou.Framework.CodeDom
+﻿namespace Meziantou.Framework.CodeDom
 {
     public class StructDeclaration : TypeDeclaration, IParametrableType, ITypeDeclarationContainer, IMemberContainer
     {
         public StructDeclaration()
-            : this(null)
+            : this(name: null)
         {
         }
 
-        public StructDeclaration(string name)
+        public StructDeclaration(string? name)
         {
             Name = name;
             Implements = new CodeObjectCollection<TypeReference>(this);

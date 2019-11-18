@@ -8,9 +8,10 @@ namespace Meziantou.Framework.Scheduling
     internal static class Extensions
     {
         [Pure]
-        public static string GetValue(this IDictionary<string, string> dict, string key, string defaultValue)
+        public static string? GetValue(this IDictionary<string, string> dict, string key, string? defaultValue)
         {
-            if (dict == null) throw new ArgumentNullException(nameof(dict));
+            if (dict == null)
+                throw new ArgumentNullException(nameof(dict));
 
             if (dict.TryGetValue(key, out var value))
                 return value;
@@ -21,9 +22,10 @@ namespace Meziantou.Framework.Scheduling
         [Pure]
         public static int GetValue(this IDictionary<string, string> dict, string key, int defaultValue)
         {
-            if (dict == null) throw new ArgumentNullException(nameof(dict));
+            if (dict == null)
+                throw new ArgumentNullException(nameof(dict));
 
-            if (dict.TryGetValue(key, out var value) && value != null && int.TryParse(value, out var i))
+            if (dict.TryGetValue(key, out var value) && value != null && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i))
                 return i;
 
             return defaultValue;
@@ -32,9 +34,10 @@ namespace Meziantou.Framework.Scheduling
         [Pure]
         public static int? GetValue(this IDictionary<string, string> dict, string key, int? defaultValue)
         {
-            if (dict == null) throw new ArgumentNullException(nameof(dict));
+            if (dict == null)
+                throw new ArgumentNullException(nameof(dict));
 
-            if (dict.TryGetValue(key, out var value) && value != null && int.TryParse(value, out var i))
+            if (dict.TryGetValue(key, out var value) && value != null && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i))
                 return i;
 
             return defaultValue;
@@ -43,9 +46,10 @@ namespace Meziantou.Framework.Scheduling
         [Pure]
         public static Frequency GetValue(this IDictionary<string, string> dict, string key, Frequency defaultValue)
         {
-            if (dict == null) throw new ArgumentNullException(nameof(dict));
+            if (dict == null)
+                throw new ArgumentNullException(nameof(dict));
 
-            if (dict.TryGetValue(key, out var value) && value != null && Enum.TryParse<Frequency>(value, true, out var enumValue))
+            if (dict.TryGetValue(key, out var value) && value != null && Enum.TryParse<Frequency>(value, ignoreCase: true, out var enumValue))
                 return enumValue;
 
             return defaultValue;
@@ -72,7 +76,7 @@ namespace Meziantou.Framework.Scheduling
         [Pure]
         public static DateTime StartOfMonth(DateTime dt)
         {
-            return StartOfMonth(dt, false);
+            return StartOfMonth(dt, keepTime: false);
         }
 
         [Pure]
@@ -89,7 +93,7 @@ namespace Meziantou.Framework.Scheduling
         [Pure]
         public static DateTime StartOfYear(DateTime dt)
         {
-            return StartOfYear(dt, false);
+            return StartOfYear(dt, keepTime: false);
         }
 
         [Pure]
@@ -108,7 +112,8 @@ namespace Meziantou.Framework.Scheduling
         [Pure]
         public static string ToEnglishOrdinal(int num)
         {
-            if (num <= 0) return num.ToString();
+            if (num <= 0)
+                return num.ToString(CultureInfo.CurrentCulture);
 
             switch (num % 100)
             {
@@ -118,31 +123,26 @@ namespace Meziantou.Framework.Scheduling
                     return num + "th";
             }
 
-            switch (num % 10)
+            return (num % 10) switch
             {
-                case 1:
-                    return num + "st";
-                case 2:
-                    return num + "nd";
-                case 3:
-                    return num + "rd";
-                default:
-                    return num + "th";
-            }
+                1 => num + "st",
+                2 => num + "nd",
+                3 => num + "rd",
+                _ => num + "th",
+            };
         }
 
         [Pure]
         public static string ToFrenchOrdinal(int num)
         {
-            if (num <= 0) return num.ToString();
+            if (num <= 0)
+                return num.ToString(CultureInfo.CurrentCulture);
 
-            switch (num)
+            return num switch
             {
-                case 1:
-                    return num + "er";
-                default:
-                    return num + "e";
-            }
+                1 => num + "er",
+                _ => num + "e",
+            };
         }
     }
 }

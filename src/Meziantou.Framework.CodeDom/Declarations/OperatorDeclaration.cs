@@ -2,9 +2,9 @@
 {
     public class OperatorDeclaration : MemberDeclaration, IModifiers
     {
-        private TypeReference _returnType;
+        private TypeReference? _returnType;
 
-        public TypeReference ReturnType
+        public TypeReference? ReturnType
         {
             get => _returnType;
             set => SetParent(ref _returnType, value);
@@ -15,11 +15,11 @@
         public Modifiers Modifiers { get; set; }
 
         public OperatorDeclaration()
-            : this(null)
+            : this(name: null)
         {
         }
 
-        public OperatorDeclaration(string name)
+        public OperatorDeclaration(string? name)
         {
             Statements = new StatementCollection(this);
             Arguments = new CodeObjectCollection<MethodArgumentDeclaration>(this);

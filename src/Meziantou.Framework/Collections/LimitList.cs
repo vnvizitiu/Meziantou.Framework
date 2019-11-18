@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Meziantou.Framework.Collections
 {
-    public class LimitList<T> : ICollection<T>, IReadOnlyList<T>
+    public sealed class LimitList<T> : ICollection<T>, IReadOnlyList<T>
     {
         private readonly LinkedList<T> _list = new LinkedList<T>();
 
@@ -65,7 +65,7 @@ namespace Meziantou.Framework.Collections
 
                     i++;
                 }
-                throw new ArgumentOutOfRangeException();
+                throw new ArgumentOutOfRangeException(nameof(index));
             }
             set
             {

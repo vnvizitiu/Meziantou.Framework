@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -6,15 +6,16 @@ using System.Text;
 
 namespace Meziantou.Framework.Scheduling
 {
-    public class RecurrenceRuleHumanizerFrench : RecurrenceRuleHumanizer
+    public sealed class RecurrenceRuleHumanizerFrench : RecurrenceRuleHumanizer
     {
-        //private static readonly char[] _vovels = { 'a', 'e', 'i', 'o', 'u', 'y' };
-        private static readonly char[] _precededByApostropheChars = { 'a', 'e', 'i', 'o', 'u', 'y', 'h' };
+        private static readonly char[] s_precededByApostropheChars = { 'a', 'e', 'i', 'o', 'u', 'y', 'h' };
 
         protected override string GetText(DailyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
 
             var sb = new StringBuilder();
             sb.Append("tous les");
@@ -24,7 +25,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" jours");
             }
@@ -35,8 +36,10 @@ namespace Meziantou.Framework.Scheduling
 
         protected override string GetText(WeeklyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
 
             var sb = new StringBuilder();
             sb.Append("toutes les");
@@ -46,7 +49,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" semaines");
             }
@@ -63,8 +66,10 @@ namespace Meziantou.Framework.Scheduling
 
         protected override string GetText(MonthlyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
 
             var sb = new StringBuilder();
             sb.Append("tous les");
@@ -74,7 +79,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" mois");
             }
@@ -93,7 +98,7 @@ namespace Meziantou.Framework.Scheduling
                     sb.Append(" le ");
                     sb.Append(GetBySetPosHumanText(rrule.BySetPositions[0]));
                 }
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(GetWeekdayHumanText(rrule.ByWeekDays, options: WeekdayHumanTextOptions.AbbrDays | WeekdayHumanTextOptions.AbbrWeekdays | WeekdayHumanTextOptions.AbbrWeekendDays));
             }
 
@@ -103,8 +108,10 @@ namespace Meziantou.Framework.Scheduling
 
         protected override string GetText(YearlyRecurrenceRule rrule, CultureInfo cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
-            if (cultureInfo == null) throw new ArgumentNullException(nameof(cultureInfo));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
+            if (cultureInfo == null)
+                throw new ArgumentNullException(nameof(cultureInfo));
 
             var sb = new StringBuilder();
             sb.Append("tous les");
@@ -114,7 +121,7 @@ namespace Meziantou.Framework.Scheduling
             }
             else
             {
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(rrule.Interval);
                 sb.Append(" ans");
             }
@@ -146,7 +153,7 @@ namespace Meziantou.Framework.Scheduling
                     ListToHumanText(sb, FrenchCultureInfo, rrule.ByMonthDays.Select(md => md.ToString(cultureInfo)).ToList(), ", ", " et ");
                     if (rrule.ByMonths != null && rrule.ByMonths.Any())
                     {
-                        sb.Append(" ");
+                        sb.Append(' ');
                         ListToHumanText(sb, FrenchCultureInfo, rrule.ByMonths.Select(MonthToString).ToList(), ", ", " et ");
                     }
                 }
@@ -159,7 +166,7 @@ namespace Meziantou.Framework.Scheduling
                     sb.Append(" le ");
                     sb.Append(GetBySetPosHumanText(rrule.BySetPositions[0]));
                 }
-                sb.Append(" ");
+                sb.Append(' ');
                 sb.Append(GetWeekdayHumanText(rrule.ByWeekDays, options: WeekdayHumanTextOptions.AbbrDays | WeekdayHumanTextOptions.AbbrWeekdays | WeekdayHumanTextOptions.AbbrWeekendDays));
                 if (rrule.ByMonths != null && rrule.ByMonths.Any())
                 {
@@ -185,10 +192,10 @@ namespace Meziantou.Framework.Scheduling
             if (string.IsNullOrEmpty(str))
                 return false;
 
-            return _precededByApostropheChars.Contains(str[0]);
+            return s_precededByApostropheChars.Contains(str[0]);
         }
 
-        private static string GetWeekdayHumanText(ICollection<ByDay> daysOfWeek, WeekdayHumanTextOptions options)
+        private static string? GetWeekdayHumanText(ICollection<ByDay> daysOfWeek, WeekdayHumanTextOptions options)
         {
             if (!daysOfWeek.Any())
                 return null;
@@ -198,21 +205,15 @@ namespace Meziantou.Framework.Scheduling
 
         private static string GetBySetPosHumanText(int setPosition)
         {
-            switch (setPosition)
+            return setPosition switch
             {
-                case -1:
-                    return "dernier";
-                case 1:
-                    return "premier";
-                case 2:
-                    return "deuxième";
-                case 3:
-                    return "troisième";
-                case 4:
-                    return "quatrième";
-            }
-
-            return Extensions.ToFrenchOrdinal(setPosition);
+                -1 => "dernier",
+                1 => "premier",
+                2 => "deuxiÃ¨me",
+                3 => "troisiÃ¨me",
+                4 => "quatriÃ¨me",
+                _ => Extensions.ToFrenchOrdinal(setPosition),
+            };
         }
 
         private static void GetHumanEnd(RecurrenceRule rrule, StringBuilder sb)
@@ -227,11 +228,11 @@ namespace Meziantou.Framework.Scheduling
             if (rrule.EndDate.HasValue)
             {
                 sb.Append(" jusqu'au ");
-                sb.Append(rrule.EndDate.Value.ToString("d MMMM yyyy", FrenchCultureInfo));
+                sb.AppendFormat(FrenchCultureInfo, "{0:d MMMM yyyy}", rrule.EndDate.Value);
             }
         }
 
-        private static string GetByMonthdayOrdinalHumanText(int monthday)
+        private static string? GetByMonthdayOrdinalHumanText(int monthday)
         {
             if (monthday > 0)
             {
@@ -274,58 +275,37 @@ namespace Meziantou.Framework.Scheduling
 
         private static string DayOfWeekToString(DayOfWeek dayOfWeek)
         {
-            switch (dayOfWeek)
+            return dayOfWeek switch
             {
-                case DayOfWeek.Sunday:
-                    return "dimanche";
-                case DayOfWeek.Monday:
-                    return "lundi";
-                case DayOfWeek.Tuesday:
-                    return "mardi";
-                case DayOfWeek.Wednesday:
-                    return "mercredi";
-                case DayOfWeek.Thursday:
-                    return "jeudi";
-                case DayOfWeek.Friday:
-                    return "vendredi";
-                case DayOfWeek.Saturday:
-                    return "samedi";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, null);
-            }
+                DayOfWeek.Sunday => "dimanche",
+                DayOfWeek.Monday => "lundi",
+                DayOfWeek.Tuesday => "mardi",
+                DayOfWeek.Wednesday => "mercredi",
+                DayOfWeek.Thursday => "jeudi",
+                DayOfWeek.Friday => "vendredi",
+                DayOfWeek.Saturday => "samedi",
+                _ => throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, message: null),
+            };
         }
 
         private static string MonthToString(Month month)
         {
-            switch (month)
+            return month switch
             {
-                case Month.January:
-                    return "janvier";
-                case Month.February:
-                    return "février";
-                case Month.March:
-                    return "mars";
-                case Month.April:
-                    return "avril";
-                case Month.May:
-                    return "mai";
-                case Month.June:
-                    return "juin";
-                case Month.July:
-                    return "juillet";
-                case Month.August:
-                    return "aout";
-                case Month.September:
-                    return "septembre";
-                case Month.October:
-                    return "octobre";
-                case Month.November:
-                    return "novembre";
-                case Month.December:
-                    return "décembre";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(month), month, null);
-            }
+                Month.January => "janvier",
+                Month.February => "fÃ©vrier",
+                Month.March => "mars",
+                Month.April => "avril",
+                Month.May => "mai",
+                Month.June => "juin",
+                Month.July => "juillet",
+                Month.August => "aout",
+                Month.September => "septembre",
+                Month.October => "octobre",
+                Month.November => "novembre",
+                Month.December => "dÃ©cembre",
+                _ => throw new ArgumentOutOfRangeException(nameof(month), month, message: null),
+            };
         }
 
         [Flags]
@@ -335,7 +315,7 @@ namespace Meziantou.Framework.Scheduling
             AbbrDays = 1,
             AbbrWeekdays = 2,
             AbbrWeekendDays = 4,
-            Plural = 8
+            Plural = 8,
         }
     }
 }

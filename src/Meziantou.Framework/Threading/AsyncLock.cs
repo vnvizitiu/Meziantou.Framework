@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meziantou.Framework.Threading
 {
-    public class AsyncLock : IDisposable
+    public sealed class AsyncLock : IDisposable
     {
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
@@ -22,7 +23,7 @@ namespace Meziantou.Framework.Threading
 
         public bool TryLock()
         {
-            return _semaphoreSlim.Wait(TimeSpan.Zero);
+            return TryLock(TimeSpan.Zero);
         }
 
         public bool TryLock(TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -45,6 +46,7 @@ namespace Meziantou.Framework.Threading
             _semaphoreSlim.Dispose();
         }
 
+        [StructLayout(LayoutKind.Auto)]
         private readonly struct LockObject : IDisposable
         {
             private readonly AsyncLock _parent;

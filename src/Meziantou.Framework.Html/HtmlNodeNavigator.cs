@@ -1,4 +1,5 @@
-﻿//#define HTML_XPATH_TRACE
+﻿#nullable disable
+//#define HTML_XPATH_TRACE
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -7,14 +8,14 @@ using System.Xml.XPath;
 
 namespace Meziantou.Framework.Html
 {
-    public class HtmlNodeNavigator : XPathNavigator
+    public sealed class HtmlNodeNavigator : XPathNavigator
     {
         private readonly NameTable _nameTable = new NameTable();
         private HtmlNode _currentNode;
         private readonly HtmlNode _rootNode;
 
         [Conditional("HTML_XPATH_TRACE")]
-        private void Trace(object value, [CallerMemberName] string methodName = null)
+        private static void Trace(object value, [CallerMemberName] string methodName = null)
         {
 #if HTML_XPATH_TRACE
             if (!EnableTrace)
@@ -43,7 +44,7 @@ namespace Meziantou.Framework.Html
             }
         }
 
-        protected HtmlNodeNavigator(HtmlNodeNavigator other)
+        private HtmlNodeNavigator(HtmlNodeNavigator other)
         {
             if (other == null)
                 throw new ArgumentNullException(nameof(other));
@@ -57,7 +58,7 @@ namespace Meziantou.Framework.Html
 
         public override object UnderlyingObject => CurrentNode;
 
-        public virtual HtmlNode CurrentNode
+        public HtmlNode CurrentNode
         {
             get => _currentNode;
             set
@@ -70,7 +71,7 @@ namespace Meziantou.Framework.Html
             }
         }
 
-        public virtual HtmlNodeNavigatorOptions Options { get; }
+        public HtmlNodeNavigatorOptions Options { get; }
         public HtmlDocument Document { get; }
         public HtmlNode BaseNode { get; }
 
@@ -224,7 +225,7 @@ namespace Meziantou.Framework.Html
                     if (att == null)
                         return false;
 
-                    while (att.LocalName == HtmlNode.XmlPrefix)
+                    while (string.Equals(att.LocalName, HtmlNode.XmlPrefix, StringComparison.Ordinal))
                     {
                         att = MoveToNextNamespaceGlobal(_rootNode, ref attributes, att);
                         if (att == null)
@@ -324,7 +325,7 @@ namespace Meziantou.Framework.Html
                         if (att == null)
                             return false;
                     }
-                    while (att.LocalName == HtmlNode.XmlPrefix);
+                    while (string.Equals(att.LocalName, HtmlNode.XmlPrefix, StringComparison.Ordinal));
                     CurrentNode = att;
                     break;
 
@@ -343,7 +344,7 @@ namespace Meziantou.Framework.Html
                             return true;
                         }
                     }
-                    while (att.LocalName == HtmlNode.XmlPrefix);
+                    while (string.Equals(att.LocalName, HtmlNode.XmlPrefix, StringComparison.Ordinal));
                     CurrentNode = att;
                     break;
             }
@@ -406,7 +407,7 @@ namespace Meziantou.Framework.Html
 
         public override void MoveToRoot()
         {
-            Trace(null);
+            Trace(value: null);
             CurrentNode = Document ?? BaseNode;
         }
 
@@ -424,10 +425,10 @@ namespace Meziantou.Framework.Html
                 if (name != null)
                 {
                     if ((Options & HtmlNodeNavigatorOptions.UppercasedNames) == HtmlNodeNavigatorOptions.UppercasedNames)
-                        return name.ToUpper();
+                        return name.ToUpperInvariant();
 
                     if ((Options & HtmlNodeNavigatorOptions.LowercasedNames) == HtmlNodeNavigatorOptions.LowercasedNames)
-                        return name.ToLower();
+                        return name.ToLowerInvariant();
                 }
 
                 return name ?? string.Empty;
@@ -443,10 +444,10 @@ namespace Meziantou.Framework.Html
                 if (name != null)
                 {
                     if ((Options & HtmlNodeNavigatorOptions.UppercasedNames) == HtmlNodeNavigatorOptions.UppercasedNames)
-                        return name.ToUpper();
+                        return name.ToUpperInvariant();
 
                     if ((Options & HtmlNodeNavigatorOptions.LowercasedNames) == HtmlNodeNavigatorOptions.LowercasedNames)
-                        return name.ToLower();
+                        return name.ToLowerInvariant();
                 }
 
                 return name ?? string.Empty;
@@ -465,10 +466,10 @@ namespace Meziantou.Framework.Html
 
                 Debug.Assert(ns != null);
                 if ((Options & HtmlNodeNavigatorOptions.UppercasedNamespaceURIs) == HtmlNodeNavigatorOptions.UppercasedNamespaceURIs)
-                    return ns.ToUpper();
+                    return ns.ToUpperInvariant();
 
                 if ((Options & HtmlNodeNavigatorOptions.LowercasedNamespaceURIs) == HtmlNodeNavigatorOptions.LowercasedNamespaceURIs)
-                    return ns.ToLower();
+                    return ns.ToLowerInvariant();
 
                 Trace("=" + ns);
                 return ns ?? string.Empty;
@@ -523,10 +524,10 @@ namespace Meziantou.Framework.Html
                 var prefix = CurrentNode.Prefix;
                 Trace("=" + prefix);
                 if ((Options & HtmlNodeNavigatorOptions.UppercasedPrefixes) == HtmlNodeNavigatorOptions.UppercasedPrefixes)
-                    return prefix.ToUpper();
+                    return prefix.ToUpperInvariant();
 
                 if ((Options & HtmlNodeNavigatorOptions.LowercasedPrefixes) == HtmlNodeNavigatorOptions.LowercasedPrefixes)
-                    return prefix.ToLower();
+                    return prefix.ToLowerInvariant();
 
                 return prefix ?? string.Empty;
             }
@@ -540,10 +541,10 @@ namespace Meziantou.Framework.Html
                 if (CurrentNode is HtmlElement element)
                 {
                     if ((Options & HtmlNodeNavigatorOptions.UppercasedValues) == HtmlNodeNavigatorOptions.UppercasedValues)
-                        return element.InnerText.ToUpper();
+                        return element.InnerText.ToUpperInvariant();
 
                     if ((Options & HtmlNodeNavigatorOptions.LowercasedValues) == HtmlNodeNavigatorOptions.LowercasedValues)
-                        return element.InnerText.ToLower();
+                        return element.InnerText.ToLowerInvariant();
 
                     return element.InnerText;
                 }
@@ -552,10 +553,10 @@ namespace Meziantou.Framework.Html
                 if (value != null)
                 {
                     if ((Options & HtmlNodeNavigatorOptions.UppercasedValues) == HtmlNodeNavigatorOptions.UppercasedValues)
-                        return value.ToUpper();
+                        return value.ToUpperInvariant();
 
                     if ((Options & HtmlNodeNavigatorOptions.LowercasedValues) == HtmlNodeNavigatorOptions.LowercasedValues)
-                        return value.ToLower();
+                        return value.ToLowerInvariant();
                 }
 
                 return value;

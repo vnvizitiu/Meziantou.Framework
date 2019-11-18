@@ -4,7 +4,7 @@ namespace Meziantou.Framework.CodeDom
 {
     public static class Extensions
     {
-        public static T GetSelfOrParentOfType<T>(this CodeObject codeObject) where T : CodeObject
+        public static T? GetSelfOrParentOfType<T>(this CodeObject? codeObject) where T : CodeObject
         {
             while (codeObject != null)
             {
@@ -66,11 +66,10 @@ namespace Meziantou.Framework.CodeDom
 
         public static ConditionStatement CreateThrowIfNullStatement(this MethodArgumentDeclaration argument)
         {
-
             return new ConditionStatement
             {
-                Condition = new BinaryExpression(BinaryOperator.Equals, argument, new LiteralExpression(null)),
-                TrueStatements = new ThrowStatement(new NewObjectExpression(typeof(ArgumentNullException), new NameofExpression(argument)))
+                Condition = new BinaryExpression(BinaryOperator.Equals, argument, new LiteralExpression(value: null)),
+                TrueStatements = new ThrowStatement(new NewObjectExpression(typeof(ArgumentNullException), new NameofExpression(argument))),
             };
         }
 
@@ -105,9 +104,9 @@ namespace Meziantou.Framework.CodeDom
 
         public static MemberReferenceExpression CreateMemberReferenceExpression(this MethodArgumentDeclaration argument, string name, params string[] names) => CreateMemberReferenceExpression(new ArgumentReferenceExpression(argument), name, names);
 
-        public static BinaryExpression CreateIsNullExpression(this Expression expression) => new BinaryExpression(BinaryOperator.Equals, new TypeReference(typeof(object)).CreateMemberReferenceExpression(nameof(object.ReferenceEquals)).CreateInvokeMethodExpression(expression), new LiteralExpression(true));
+        public static BinaryExpression CreateIsNullExpression(this Expression expression) => new BinaryExpression(BinaryOperator.Equals, new TypeReference(typeof(object)).CreateMemberReferenceExpression(nameof(object.ReferenceEquals)).CreateInvokeMethodExpression(expression), new LiteralExpression(value: true));
 
-        public static BinaryExpression CreateEqualsNullExpression(this Expression expression) => new BinaryExpression(BinaryOperator.Equals, expression, new LiteralExpression(null));
+        public static BinaryExpression CreateEqualsNullExpression(this Expression expression) => new BinaryExpression(BinaryOperator.Equals, expression, new LiteralExpression(value: null));
 
         public static MethodInvokeExpression CreateIsNullOrEmptyExpression(this Expression expression) => new TypeReference(typeof(string)).CreateInvokeMethodExpression(nameof(string.IsNullOrEmpty), expression);
 

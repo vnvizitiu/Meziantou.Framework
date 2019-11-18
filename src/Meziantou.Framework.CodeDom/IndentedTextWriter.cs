@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -42,7 +43,7 @@ namespace Meziantou.Framework.CodeDom
         }
 
         public IndentedTextWriter(TextWriter writer, string tabString)
-            : this(writer, tabString, true)
+            : this(writer, tabString, closeWriter: true)
         {
         }
 
@@ -80,15 +81,15 @@ namespace Meziantou.Framework.CodeDom
             _tabsPending = false;
         }
 
-        public override void Write(string value)
+        public override void Write(string? value)
         {
-            if (value != NewLine)
+            if (!string.Equals(value, NewLine, StringComparison.Ordinal))
             {
                 OutputTabs();
             }
 
             InnerWriter.Write(value);
-            if (value != null && value.EndsWith(NewLine))
+            if (value != null && value.EndsWith(NewLine, StringComparison.Ordinal))
             {
                 _tabsPending = true;
             }
@@ -106,7 +107,7 @@ namespace Meziantou.Framework.CodeDom
             InnerWriter.Write(value);
         }
 
-        public override void Write(char[] buffer)
+        public override void Write(char[]? buffer)
         {
             OutputTabs();
             InnerWriter.Write(buffer);
@@ -142,25 +143,25 @@ namespace Meziantou.Framework.CodeDom
             InnerWriter.Write(value);
         }
 
-        public override void Write(object value)
+        public override void Write(object? value)
         {
             OutputTabs();
             InnerWriter.Write(value);
         }
 
-        public override void Write(string format, object arg0)
+        public override void Write(string format, object? arg0)
         {
             OutputTabs();
             InnerWriter.Write(format, arg0);
         }
 
-        public override void Write(string format, object arg0, object arg1)
+        public override void Write(string format, object? arg0, object? arg1)
         {
             OutputTabs();
             InnerWriter.Write(format, arg0, arg1);
         }
 
-        public override void Write(string format, params object[] arg)
+        public override void Write(string format, params object?[] arg)
         {
             OutputTabs();
             InnerWriter.Write(format, arg);
@@ -171,7 +172,7 @@ namespace Meziantou.Framework.CodeDom
             InnerWriter.WriteLine(s);
         }
 
-        public override void WriteLine(string value)
+        public override void WriteLine(string? value)
         {
             if (value == null)
             {
@@ -205,7 +206,7 @@ namespace Meziantou.Framework.CodeDom
             _tabsPending = true;
         }
 
-        public override void WriteLine(char[] buffer)
+        public override void WriteLine(char[]? buffer)
         {
             OutputTabs();
             InnerWriter.WriteLine(buffer);
@@ -247,28 +248,28 @@ namespace Meziantou.Framework.CodeDom
             _tabsPending = true;
         }
 
-        public override void WriteLine(object value)
+        public override void WriteLine(object? value)
         {
             OutputTabs();
             InnerWriter.WriteLine(value);
             _tabsPending = true;
         }
 
-        public override void WriteLine(string format, object arg0)
+        public override void WriteLine(string format, object? arg0)
         {
             OutputTabs();
             InnerWriter.WriteLine(format, arg0);
             _tabsPending = true;
         }
 
-        public override void WriteLine(string format, object arg0, object arg1)
+        public override void WriteLine(string format, object? arg0, object? arg1)
         {
             OutputTabs();
             InnerWriter.WriteLine(format, arg0, arg1);
             _tabsPending = true;
         }
 
-        public override void WriteLine(string format, params object[] arg)
+        public override void WriteLine(string format, params object?[] arg)
         {
             OutputTabs();
             InnerWriter.WriteLine(format, arg);

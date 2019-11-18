@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Meziantou.Framework.CodeDom
 {
     internal sealed class ParsedType
     {
-        private static readonly Dictionary<string, ParsedType> _parsedTypes = new Dictionary<string, ParsedType>();
+        private static readonly Dictionary<string, ParsedType> s_parsedTypes = new Dictionary<string, ParsedType>(StringComparer.Ordinal);
 
         private readonly List<ParsedType> _arguments = new List<ParsedType>();
         private string _typeName;
@@ -16,7 +17,7 @@ namespace Meziantou.Framework.CodeDom
             private set => _typeName = value ?? throw new ArgumentNullException(nameof(value));
         }
 
-        public string Namespace
+        public string? Namespace
         {
             get
             {
@@ -32,7 +33,7 @@ namespace Meziantou.Framework.CodeDom
             }
         }
 
-        public string Name
+        public string? Name
         {
             get
             {
@@ -48,7 +49,7 @@ namespace Meziantou.Framework.CodeDom
             }
         }
 
-        public string AssemblyName { get; private set; }
+        public string? AssemblyName { get; private set; }
 
         public bool IsGeneric { get; private set; }
 
@@ -56,22 +57,22 @@ namespace Meziantou.Framework.CodeDom
 
         static ParsedType()
         {
-            _parsedTypes["string"] = new ParsedType(typeof(string).FullName);
-            _parsedTypes["bool"] = new ParsedType(typeof(bool).FullName);
-            _parsedTypes["int"] = new ParsedType(typeof(int).FullName);
-            _parsedTypes["uint"] = new ParsedType(typeof(uint).FullName);
-            _parsedTypes["long"] = new ParsedType(typeof(long).FullName);
-            _parsedTypes["ulong"] = new ParsedType(typeof(ulong).FullName);
-            _parsedTypes["short"] = new ParsedType(typeof(short).FullName);
-            _parsedTypes["ushort"] = new ParsedType(typeof(ushort).FullName);
-            _parsedTypes["byte"] = new ParsedType(typeof(byte).FullName);
-            _parsedTypes["sbyte"] = new ParsedType(typeof(sbyte).FullName);
-            _parsedTypes["float"] = new ParsedType(typeof(float).FullName);
-            _parsedTypes["double"] = new ParsedType(typeof(double).FullName);
-            _parsedTypes["decimal"] = new ParsedType(typeof(decimal).FullName);
-            _parsedTypes["object"] = new ParsedType(typeof(object).FullName);
-            _parsedTypes["char"] = new ParsedType(typeof(char).FullName);
-            _parsedTypes["void"] = new ParsedType(typeof(void).FullName);
+            s_parsedTypes["string"] = new ParsedType(typeof(string).FullName!);
+            s_parsedTypes["bool"] = new ParsedType(typeof(bool).FullName!);
+            s_parsedTypes["int"] = new ParsedType(typeof(int).FullName!);
+            s_parsedTypes["uint"] = new ParsedType(typeof(uint).FullName!);
+            s_parsedTypes["long"] = new ParsedType(typeof(long).FullName!);
+            s_parsedTypes["ulong"] = new ParsedType(typeof(ulong).FullName!);
+            s_parsedTypes["short"] = new ParsedType(typeof(short).FullName!);
+            s_parsedTypes["ushort"] = new ParsedType(typeof(ushort).FullName!);
+            s_parsedTypes["byte"] = new ParsedType(typeof(byte).FullName!);
+            s_parsedTypes["sbyte"] = new ParsedType(typeof(sbyte).FullName!);
+            s_parsedTypes["float"] = new ParsedType(typeof(float).FullName!);
+            s_parsedTypes["double"] = new ParsedType(typeof(double).FullName!);
+            s_parsedTypes["decimal"] = new ParsedType(typeof(decimal).FullName!);
+            s_parsedTypes["object"] = new ParsedType(typeof(object).FullName!);
+            s_parsedTypes["char"] = new ParsedType(typeof(char).FullName!);
+            s_parsedTypes["void"] = new ParsedType(typeof(void).FullName!);
         }
 
         private ParsedType(string typeName)
@@ -79,8 +80,8 @@ namespace Meziantou.Framework.CodeDom
             if (typeName == null)
                 throw new ArgumentNullException(nameof(typeName));
 
-            TypeName = typeName.Trim();
-            if (TypeName.StartsWith("[") && TypeName.EndsWith("]"))
+            _typeName = typeName.Trim();
+            if (TypeName.StartsWith("[", StringComparison.Ordinal) && TypeName.EndsWith("]", StringComparison.Ordinal))
             {
                 TypeName = TypeName.Substring(1, TypeName.Length - 2).Trim();
             }
@@ -99,24 +100,24 @@ namespace Meziantou.Framework.CodeDom
                 throw new ArgumentNullException(nameof(typeName));
 
             typeName = typeName.Trim();
-            if (typeName.StartsWith("Of "))
+            if (typeName.StartsWith("Of ", StringComparison.Ordinal))
             {
                 typeName = typeName.Substring(3).Trim();
             }
 
-            if (!_parsedTypes.TryGetValue(typeName, out var pt))
+            if (!s_parsedTypes.TryGetValue(typeName, out var pt))
             {
                 pt = Parse(typeName, "<", '>');
                 if (pt != null)
                 {
-                    _parsedTypes.Add(typeName, pt);
+                    s_parsedTypes.Add(typeName, pt);
                     return pt;
                 }
 
                 pt = Parse(typeName, "(Of", ')');
                 if (pt != null)
                 {
-                    _parsedTypes.Add(typeName, pt);
+                    s_parsedTypes.Add(typeName, pt);
                     return pt;
                 }
 
@@ -126,12 +127,12 @@ namespace Meziantou.Framework.CodeDom
             return pt;
         }
 
-        private static ParsedType Parse(string typeName, string start, char end)
+        private static ParsedType? Parse(string typeName, string start, char end)
         {
             if (typeName == null)
                 throw new ArgumentNullException(nameof(typeName));
 
-            if ((typeName.StartsWith("[")) && (typeName.EndsWith("]")))
+            if ((typeName.StartsWith("[", StringComparison.Ordinal)) && typeName.EndsWith("]", StringComparison.Ordinal))
             {
                 typeName = typeName.Substring(1, typeName.Length - 2).Trim();
             }
@@ -152,13 +153,15 @@ namespace Meziantou.Framework.CodeDom
                     if (asm < 0)
                     {
                         pt = new ParsedType(typeName.Substring(0, quot));
-                        args = int.Parse(typeName.Substring(quot + 1));
+                        args = int.Parse(typeName.Substring(quot + 1), CultureInfo.InvariantCulture);
                     }
                     else
                     {
-                        pt = new ParsedType(typeName.Substring(0, quot));
-                        pt.AssemblyName = typeName.Substring(asm + 1).Trim();
-                        args = int.Parse(typeName.Substring(quot + 1, asm - quot - 1));
+                        pt = new ParsedType(typeName.Substring(0, quot))
+                        {
+                            AssemblyName = typeName.Substring(asm + 1).Trim(),
+                        };
+                        args = int.Parse(typeName.Substring(quot + 1, asm - quot - 1), CultureInfo.InvariantCulture);
                     }
                     for (var i = 0; i < args; i++)
                     {
@@ -170,7 +173,7 @@ namespace Meziantou.Framework.CodeDom
             }
             else
             {
-                lt = typeName.IndexOf(start);
+                lt = typeName.IndexOf(start, StringComparison.Ordinal);
                 gt = typeName.LastIndexOf(end);
                 if ((lt < 0) || (gt < 0))
                     return null;

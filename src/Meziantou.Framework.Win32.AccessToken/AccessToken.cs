@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace Meziantou.Framework.Win32
 {
-    public class AccessToken : IDisposable
+    public sealed class AccessToken : IDisposable
     {
         private IntPtr _token;
 
@@ -26,8 +27,7 @@ namespace Meziantou.Framework.Win32
 
         public TokenType GetTokenType()
         {
-            var len = IntPtr.Size;
-            if (!NativeMethods.GetTokenInformation(_token, TokenInformationClass.TokenType, out TokenType result, len, out len))
+            if (!NativeMethods.GetTokenInformation(_token, TokenInformationClass.TokenType, out TokenType result, IntPtr.Size, out _))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             return result;
@@ -35,8 +35,7 @@ namespace Meziantou.Framework.Win32
 
         public TokenElevationType GetElevationType()
         {
-            var len = IntPtr.Size;
-            if (!NativeMethods.GetTokenInformation(_token, TokenInformationClass.TokenElevationType, out TokenElevationType result, len, out len))
+            if (!NativeMethods.GetTokenInformation(_token, TokenInformationClass.TokenElevationType, out TokenElevationType result, IntPtr.Size, out _))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             return result;
@@ -47,28 +46,28 @@ namespace Meziantou.Framework.Win32
             return GetTokenInformation<NativeMethods.TOKEN_ELEVATION>(TokenInformationClass.TokenElevation).TokenIsElevated;
         }
 
-        public AccessToken GetLinkedToken()
+        public AccessToken? GetLinkedToken()
         {
             return GetTokenInformation<NativeMethods.TOKEN_LINKED_TOKEN, AccessToken>(
                 TokenInformationClass.TokenElevation,
                 linkedToken => new AccessToken(linkedToken.LinkedToken));
         }
 
-        public TokenEntry GetMandatoryIntegrityLevel()
+        public TokenEntry? GetMandatoryIntegrityLevel()
         {
             return GetTokenInformation<NativeMethods.TOKEN_MANDATORY_LABEL, TokenEntry>(
                 TokenInformationClass.TokenIntegrityLevel,
                 mandatoryLabel => new TokenEntry(new SecurityIdentifier(mandatoryLabel.Label.Sid)));
         }
 
-        public SecurityIdentifier GetOwner()
+        public SecurityIdentifier? GetOwner()
         {
             return GetTokenInformation<NativeMethods.TOKEN_OWNER, SecurityIdentifier>(
                 TokenInformationClass.TokenOwner,
                 owner => new SecurityIdentifier(owner.Owner));
         }
 
-        public IEnumerable<TokenGroupEntry> EnumerateGroups()
+        public IEnumerable<TokenGroupEntry>? EnumerateGroups()
         {
             return GetTokenInformation<NativeMethods.TOKEN_GROUPS, IReadOnlyList<TokenGroupEntry>>(
                 TokenInformationClass.TokenGroups,
@@ -84,7 +83,7 @@ namespace Meziantou.Framework.Win32
                 });
         }
 
-        public IEnumerable<TokenGroupEntry> EnumerateRestrictedSid()
+        public IEnumerable<TokenGroupEntry>? EnumerateRestrictedSid()
         {
             return GetTokenInformation<NativeMethods.TOKEN_GROUPS, IReadOnlyList<TokenGroupEntry>>(
                 TokenInformationClass.TokenRestrictedSids,
@@ -100,7 +99,7 @@ namespace Meziantou.Framework.Win32
                 });
         }
 
-        public IEnumerable<TokenPrivilegeEntry> EnumeratePrivileges()
+        public IEnumerable<TokenPrivilegeEntry>? EnumeratePrivileges()
         {
             return GetTokenInformation<NativeMethods.TOKEN_PRIVILEGES, IReadOnlyList<TokenPrivilegeEntry>>(
                 TokenInformationClass.TokenPrivileges,
@@ -125,7 +124,7 @@ namespace Meziantou.Framework.Win32
             var basePtr = new IntPtr(handle.ToInt64() + offset.ToInt64());
             for (var i = 0; i < count; i++)
             {
-                yield return Marshal.PtrToStructure<TItem>(basePtr + (i * size));
+                yield return Marshal.PtrToStructure<TItem>(basePtr + (i * size))!;
             }
         }
 
@@ -133,15 +132,19 @@ namespace Meziantou.Framework.Win32
         {
             return GetTokenInformation<T, T>(type, Identity);
 
-            T Identity(T arg) => arg;
+            static T Identity(T arg) => arg;
         }
 
-        private TResult GetTokenInformation<T, TResult>(TokenInformationClass type, Func<T, TResult> func) where T : struct
+        [return: MaybeNull]
+        private TResult GetTokenInformation<T, TResult>(TokenInformationClass type, Func<T, TResult> func)
+            where T : struct
         {
-            return GetTokenInformation<T, TResult>(type, (_, arg) => func(arg));
+            return GetTokenInformation<T, TResult>(type, (_, arg) => func(arg))!;
         }
 
-        private TResult GetTokenInformation<T, TResult>(TokenInformationClass type, Func<IntPtr, T, TResult> func) where T : struct
+        [return: MaybeNull]
+        private TResult GetTokenInformation<T, TResult>(TokenInformationClass type, Func<IntPtr, T, TResult> func)
+            where T : struct
         {
             if (!NativeMethods.GetTokenInformation(_token, type, IntPtr.Zero, 0, out var dwLength))
             {
@@ -154,9 +157,6 @@ namespace Meziantou.Framework.Win32
                         var handle = Marshal.AllocHGlobal((int)dwLength);
                         try
                         {
-                            if (handle == IntPtr.Zero)
-                                throw new OutOfMemoryException();
-
                             if (!NativeMethods.GetTokenInformation(_token, type, handle, dwLength, out dwLength))
                                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
@@ -172,14 +172,14 @@ namespace Meziantou.Framework.Win32
                         }
 
                     case NativeMethods.ERROR_INVALID_HANDLE:
-                        throw new ArgumentException("Argument_InvalidImpersonationToken");
+                        throw new ArgumentException("Invalid impersonation token");
 
                     default:
                         throw new Win32Exception(errorCode);
                 }
             }
 
-            return default;
+            return default!;
         }
 
         public void EnablePrivilege(string privilegeName)
@@ -201,7 +201,7 @@ namespace Meziantou.Framework.Win32
         public void DisableAllPrivileges()
         {
             uint returnSize = 0;
-            if (!NativeMethods.AdjustTokenPrivileges(_token, true, IntPtr.Zero, 0, IntPtr.Zero, ref returnSize))
+            if (!NativeMethods.AdjustTokenPrivileges(_token, disableAllPrivileges: true, IntPtr.Zero, 0, IntPtr.Zero, ref returnSize))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
         }
 
@@ -215,13 +215,20 @@ namespace Meziantou.Framework.Win32
 
         private void AdjustPrivilege(string privilegeName, PrivilegeOperation operation)
         {
-            if (!NativeMethods.LookupPrivilegeValue(null, privilegeName, out var luid))
+            if (!NativeMethods.LookupPrivilegeValue(lpSystemName: null, privilegeName, out var luid))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
-            var tp = new NativeMethods.TOKEN_PRIVILEGES();
-            tp.PrivilegeCount = 1;
-            tp.Privileges = new NativeMethods.LUID_AND_ATTRIBUTES[1];
-            tp.Privileges[0].Luid = luid;
+            var tp = new NativeMethods.TOKEN_PRIVILEGES
+            {
+                PrivilegeCount = 1,
+                Privileges = new NativeMethods.LUID_AND_ATTRIBUTES[1]
+                {
+                    new NativeMethods.LUID_AND_ATTRIBUTES
+                    {
+                        Luid = luid,
+                    },
+                },
+            };
 
             switch (operation)
             {
@@ -237,7 +244,7 @@ namespace Meziantou.Framework.Win32
             }
 
             uint returnSize = 0;
-            if (!NativeMethods.AdjustTokenPrivileges(_token, false, ref tp, 0, IntPtr.Zero, ref returnSize))
+            if (!NativeMethods.AdjustTokenPrivileges(_token, disableAllPrivileges: false, ref tp, 0, IntPtr.Zero, ref returnSize))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
         }
 
@@ -279,17 +286,15 @@ namespace Meziantou.Framework.Win32
 
         public static bool IsLimitedToken()
         {
-            using (var token = OpenCurrentProcessToken(TokenAccessLevels.Query))
-            {
-                return token.GetElevationType() == TokenElevationType.Limited;
-            }
+            using var token = OpenCurrentProcessToken(TokenAccessLevels.Query);
+            return token.GetElevationType() == TokenElevationType.Limited;
         }
 
         private enum PrivilegeOperation
         {
             Enable,
             Disable,
-            Remove
+            Remove,
         }
     }
 }

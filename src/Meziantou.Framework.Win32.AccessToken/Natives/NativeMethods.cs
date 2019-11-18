@@ -39,25 +39,25 @@ namespace Meziantou.Framework.Win32.Natives
         internal static extern bool DuplicateToken(IntPtr tokenHandle, SecurityImpersonationLevel ImpersonationLevel, out IntPtr duplicateTokenHandle);
 
         [DllImport("advapi32.dll", SetLastError = true)]
-        internal static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool DisableAllPrivileges, ref TOKEN_PRIVILEGES NewState, uint BufferLength, IntPtr PreviousState, ref uint ReturnLength);
+        internal static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool disableAllPrivileges, ref TOKEN_PRIVILEGES NewState, uint BufferLength, IntPtr PreviousState, ref uint ReturnLength);
 
         [DllImport("advapi32.dll", SetLastError = true)]
-        internal static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool DisableAllPrivileges, IntPtr NewState, uint BufferLength, IntPtr PreviousState, ref uint ReturnLength);
+        internal static extern bool AdjustTokenPrivileges(IntPtr TokenHandle, bool disableAllPrivileges, IntPtr NewState, uint BufferLength, IntPtr PreviousState, ref uint ReturnLength);
 
         [DllImport("advapi32.dll", SetLastError = true)]
         internal static extern bool CheckTokenMembership(IntPtr TokenHandle, byte[] SidToCheck, ref bool IsMember);
 
         [DllImport("advapi32.dll", SetLastError = true)]
-        internal static extern bool LookupPrivilegeValue([MarshalAs(UnmanagedType.LPTStr)] string lpSystemName, [MarshalAs(UnmanagedType.LPTStr)] string lpName, out LUID lpLuid);
+        internal static extern bool LookupPrivilegeValue([MarshalAs(UnmanagedType.LPTStr)] string? lpSystemName, [MarshalAs(UnmanagedType.LPTStr)] string lpName, out LUID lpLuid);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        internal extern static int LookupAccountSid(string systemName, IntPtr pSid, StringBuilder szName, ref int nameSize, StringBuilder szDomain, ref int domainSize, ref int eUse);
+        internal extern static int LookupAccountSid(string? systemName, IntPtr pSid, StringBuilder szName, ref int nameSize, StringBuilder szDomain, ref int domainSize, ref int eUse);
 
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool ConvertSidToStringSid(IntPtr sid, [MarshalAs(UnmanagedType.LPTStr)] out string pStringSid);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern bool LookupPrivilegeName(string lpSystemName, ref LUID lpLuid, StringBuilder lpName, ref int cchName);
+        private static extern bool LookupPrivilegeName(string? lpSystemName, ref LUID lpLuid, StringBuilder? lpName, ref int cchName);
 
         [DllImport("advapi32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool ConvertStringSidToSid([In, MarshalAs(UnmanagedType.LPTStr)] string pStringSid, ref IntPtr sid);
@@ -74,9 +74,9 @@ namespace Meziantou.Framework.Win32.Natives
         internal static string LookupPrivilegeName(LUID luid)
         {
             var luidNameLen = 0;
-            LookupPrivilegeName(null, ref luid, null, ref luidNameLen);
+            LookupPrivilegeName(lpSystemName: null, ref luid, lpName: null, ref luidNameLen);
             var sb = new StringBuilder(luidNameLen);
-            if (LookupPrivilegeName(null, ref luid, sb, ref luidNameLen))
+            if (LookupPrivilegeName(lpSystemName: null, ref luid, sb, ref luidNameLen))
                 return sb.ToString();
 
             throw new Win32Exception(Marshal.GetLastWin32Error());
@@ -92,7 +92,7 @@ namespace Meziantou.Framework.Win32.Natives
             SidTypeDeletedAccount,
             SidTypeInvalid,
             SidTypeUnknown,
-            SidTypeComputer
+            SidTypeComputer,
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

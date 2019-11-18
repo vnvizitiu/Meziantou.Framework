@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -6,7 +7,7 @@ using System.Text;
 
 namespace Meziantou.Framework.Html
 {
-    public class HtmlReader
+    public sealed class HtmlReader
     {
         private readonly StringBuilder _rawValue = new StringBuilder();
         private string _currentElement;
@@ -23,35 +24,32 @@ namespace Meziantou.Framework.Html
         public event EventHandler<HtmlReaderParseEventArgs> Parsing;
 
         public HtmlReader(TextReader reader)
-            : this(reader, null)
+            : this(reader, options: null)
         {
         }
 
         public HtmlReader(TextReader reader, HtmlOptions options)
         {
-            if (reader == null)
-                throw new ArgumentNullException(nameof(reader));
+            TextReader = reader ?? throw new ArgumentNullException(nameof(reader));
 
             ParserState = HtmlParserState.Text;
             Value = new StringBuilder();
-
             FirstEncodingErrorOffset = -1;
             Errors = new Collection<HtmlError>();
             Options = options ?? new HtmlOptions();
-            TextReader = reader;
         }
 
         public TextReader TextReader { get; }
         public HtmlOptions Options { get; }
-        public virtual ICollection<HtmlError> Errors { get; }
-        public virtual HtmlReaderState State { get; private set; }
-        public virtual int FirstEncodingErrorOffset { get; private set; }
-        public HtmlParserState ParserState { get; protected set; }
+        public ICollection<HtmlError> Errors { get; }
+        public HtmlReaderState State { get; private set; }
+        public int FirstEncodingErrorOffset { get; private set; }
+        public HtmlParserState ParserState { get; private set; }
         public StringBuilder Value { get; private set; }
 
-        protected Queue<HtmlReaderState> ParserStatesQueue { get; } = new Queue<HtmlReaderState>();
+        private Queue<HtmlReaderState> ParserStatesQueue { get; } = new Queue<HtmlReaderState>();
 
-        public virtual bool IsRestartable
+        public bool IsRestartable
         {
             get
             {
@@ -63,7 +61,7 @@ namespace Meziantou.Framework.Html
             }
         }
 
-        public virtual bool Restart()
+        public bool Restart()
         {
             if (!IsRestartable)
                 throw new InvalidOperationException();
@@ -75,14 +73,14 @@ namespace Meziantou.Framework.Html
             return sr.BaseStream.Seek(0, SeekOrigin.Begin) == 0;
         }
 
-        protected virtual void OnParsing(object sender, HtmlReaderParseEventArgs e)
+        private void OnParsing(object sender, HtmlReaderParseEventArgs e)
         {
             Parsing?.Invoke(sender, e);
         }
 
         private void SetCurrentElement(string tag)
         {
-            if (_currentElement != tag)
+            if (!string.Equals(_currentElement, tag, StringComparison.Ordinal))
             {
                 _currentElement = tag;
                 _typeAttribute = null;
@@ -91,14 +89,17 @@ namespace Meziantou.Framework.Html
 
         private bool OnParsing(ref char c, ref char prev, ref char peek, out bool cont)
         {
-            var e = new HtmlReaderParseEventArgs(Value, _rawValue);
-            e.Eof = _eof;
-            e.CurrentElement = _currentElement;
-            e.CurrentCharacter = c;
-            e.PreviousCharacter = prev;
-            e.PeekCharacter = peek;
-            e.EatNextCharacters = _eatNext;
-            e.State = ParserState;
+            var e = new HtmlReaderParseEventArgs(Value, _rawValue)
+            {
+                Eof = _eof,
+                CurrentElement = _currentElement,
+                CurrentCharacter = c,
+                PreviousCharacter = prev,
+                PeekCharacter = peek,
+                EatNextCharacters = _eatNext,
+                State = ParserState,
+            };
+
             OnParsing(this, e);
             cont = e.Continue;
             _eof = e.Eof;
@@ -114,27 +115,27 @@ namespace Meziantou.Framework.Html
             return true;
         }
 
-        public virtual bool IsAnyQuote(int character)
+        public static bool IsAnyQuote(int character)
         {
             return character == '"' || character == '\'';
         }
 
-        public virtual bool IsWhiteSpace(int character)
+        public static bool IsWhiteSpace(int character)
         {
             return character == 10 || character == 13 || character == 32 || character == 9;
         }
 
-        public virtual HtmlReaderState CreateState(HtmlParserState rawParserState, string rawValue)
+        public HtmlReaderState CreateState(HtmlParserState rawParserState, string rawValue)
         {
             return new HtmlReaderState(this, rawParserState, rawValue);
         }
 
-        protected virtual void PushCurrentState(HtmlParserState fragmentType, string value)
+        private void PushCurrentState(HtmlParserState fragmentType, string value)
         {
             PushState(CreateState(fragmentType, value));
         }
 
-        protected virtual void PushState(HtmlReaderState state)
+        private void PushState(HtmlReaderState state)
         {
             if (state.ParserState == HtmlParserState.AttName)
             {
@@ -149,17 +150,17 @@ namespace Meziantou.Framework.Html
             ParserStatesQueue.Enqueue(state);
         }
 
-        protected virtual void PushCurrentState()
+        private void PushCurrentState()
         {
             PushState(CreateState(ParserState, Value.ToString()));
         }
 
-        protected virtual void AddError(HtmlErrorType type)
+        private void AddError(HtmlErrorType type)
         {
             Errors.Add(new HtmlError(State.Line, State.Column, State.Offset, type));
         }
 
-        public virtual bool Read()
+        public bool Read()
         {
             if (ParserStatesQueue.Count > 0)
             {
@@ -181,7 +182,7 @@ namespace Meziantou.Framework.Html
             return false;
         }
 
-        protected virtual void PushEndOfFile()
+        private void PushEndOfFile()
         {
             switch (ParserState)
             {
@@ -203,11 +204,11 @@ namespace Meziantou.Framework.Html
                     break;
 
                 case HtmlParserState.AttName:
-                    if (_rawValue.ToString().Trim() == ">")
+                    if (string.Equals(_rawValue.ToString().Trim(), ">", StringComparison.Ordinal))
                         break;
 
                     PushCurrentState();
-                    PushCurrentState(HtmlParserState.AttValue, null);
+                    PushCurrentState(HtmlParserState.AttValue, value: null);
                     break;
 
                 case HtmlParserState.AttValue:
@@ -220,7 +221,7 @@ namespace Meziantou.Framework.Html
             }
         }
 
-        protected virtual void DoRead()
+        private void DoRead()
         {
             _rawValue.Length = 0;
             Value.Length = 0;
@@ -399,12 +400,12 @@ namespace Meziantou.Framework.Html
 
                         Value.Append(c);
 
-                        if (Value.ToString() == "!--")
+                        if (string.Equals(Value.ToString(), "!--", StringComparison.Ordinal))
                         {
                             Value.Length = 0;
                             ParserState = HtmlParserState.CommentOpen;
                         }
-                        else if (Value.ToString() == "![CDATA[")
+                        else if (string.Equals(Value.ToString(), "![CDATA[", StringComparison.Ordinal))
                         {
                             Value.Length = 0;
                             ParserState = HtmlParserState.CData;
@@ -501,7 +502,7 @@ namespace Meziantou.Framework.Html
                             if (c == '>')
                             {
                                 PushCurrentState();
-                                PushCurrentState(HtmlParserState.AttValue, null);
+                                PushCurrentState(HtmlParserState.AttValue, value: null);
                                 PushCurrentState(HtmlParserState.TagEnd, _currentElement);
                                 if ((Options.GetElementReadOptions(_currentElement) & HtmlElementReadOptions.InnerRaw) == HtmlElementReadOptions.InnerRaw)
                                 {
@@ -524,7 +525,7 @@ namespace Meziantou.Framework.Html
                             if (c == '/' && peek == '>')
                             {
                                 PushCurrentState();
-                                PushCurrentState(HtmlParserState.AttValue, null);
+                                PushCurrentState(HtmlParserState.AttValue, value: null);
                                 PushCurrentState(HtmlParserState.TagEndClose, _currentElement);
                                 ParserState = HtmlParserState.Text;
                                 _eatNext = 1;
@@ -551,7 +552,7 @@ namespace Meziantou.Framework.Html
                         if (c == '>')
                         {
                             PushCurrentState();
-                            PushCurrentState(HtmlParserState.AttValue, null);
+                            PushCurrentState(HtmlParserState.AttValue, value: null);
                             PushCurrentState(HtmlParserState.TagEnd, _currentElement);
                             if ((Options.GetElementReadOptions(_currentElement) & HtmlElementReadOptions.InnerRaw) == HtmlElementReadOptions.InnerRaw)
                             {
@@ -574,7 +575,7 @@ namespace Meziantou.Framework.Html
                         if (c == '/' && peek == '>')
                         {
                             PushCurrentState();
-                            PushCurrentState(HtmlParserState.AttValue, null);
+                            PushCurrentState(HtmlParserState.AttValue, value: null);
                             PushCurrentState(HtmlParserState.TagEndClose, _currentElement);
                             ParserState = HtmlParserState.Text;
                             _eatNext = 1;
@@ -584,7 +585,7 @@ namespace Meziantou.Framework.Html
                         if (!IsWhiteSpace(c))
                         {
                             // send a null attribute
-                            PushCurrentState(HtmlParserState.AttValue, null);
+                            PushCurrentState(HtmlParserState.AttValue, value: null);
 
                             ParserState = HtmlParserState.AttName;
                             Value.Append(c);

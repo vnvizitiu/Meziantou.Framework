@@ -6,19 +6,15 @@ using System.Text;
 
 namespace Meziantou.Framework.Win32
 {
-    public class SecurityIdentifier
+    public sealed class SecurityIdentifier
     {
         private const byte MaxSubAuthorities = 15;
         private const int MaxBinaryLength = 1 + 1 + 6 + (MaxSubAuthorities * 4); // 4 bytes for each subauth
-
-        private readonly IntPtr _sid;
 
         internal SecurityIdentifier(IntPtr sid)
         {
             if (sid == IntPtr.Zero)
                 throw new ArgumentNullException(nameof(sid));
-
-            _sid = sid;
 
             LookupName(sid, out var domain, out var name);
             Domain = domain;
@@ -26,8 +22,8 @@ namespace Meziantou.Framework.Win32
             Sid = ConvertSidToStringSid(sid);
         }
 
-        public string Domain { get; }
-        public string Name { get; }
+        public string? Domain { get; }
+        public string? Name { get; }
         public string Sid { get; }
 
         public string FullName => Domain + "\\" + Name;
@@ -44,8 +40,6 @@ namespace Meziantou.Framework.Win32
         {
             uint size = MaxBinaryLength * sizeof(byte);
             var resultSid = Marshal.AllocHGlobal((int)size);
-            if (resultSid == IntPtr.Zero)
-                throw new OutOfMemoryException();
 
             try
             {
@@ -71,7 +65,7 @@ namespace Meziantou.Framework.Win32
             throw new Win32Exception(Marshal.GetLastWin32Error());
         }
 
-        private static void LookupName(IntPtr sid, out string domain, out string name)
+        private static void LookupName(IntPtr sid, out string? domain, out string? name)
         {
             var userNameLen = 256;
             var domainNameLen = 256;
@@ -79,7 +73,7 @@ namespace Meziantou.Framework.Win32
             var bufDomainName = new StringBuilder(domainNameLen);
             var sidNameUse = 0;
 
-            if (NativeMethods.LookupAccountSid(null, sid, bufUserName, ref userNameLen, bufDomainName, ref domainNameLen, ref sidNameUse) != 0)
+            if (NativeMethods.LookupAccountSid(systemName: null, sid, bufUserName, ref userNameLen, bufDomainName, ref domainNameLen, ref sidNameUse) != 0)
             {
                 domain = bufDomainName.ToString();
                 name = bufUserName.ToString();

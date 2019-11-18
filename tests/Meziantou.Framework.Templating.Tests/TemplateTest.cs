@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System;
+using System.Collections.Generic;
+using Xunit;
 
 namespace Meziantou.Framework.Templating.Tests
 {
-    [TestClass]
     public class TemplateTest
     {
-        [TestMethod]
+        [Fact]
         public void Template_TextOnly()
         {
             // Arrange
@@ -18,10 +18,10 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run();
 
             // Assert
-            Assert.AreEqual("Sample", result);
+            Assert.Equal("Sample", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_CodeOnly()
         {
             // Arrange
@@ -32,10 +32,10 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run();
 
             // Assert
-            Assert.AreEqual("Sample", result);
+            Assert.Equal("Sample", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_CodeEval()
         {
             // Arrange
@@ -46,10 +46,10 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run();
 
             // Assert
-            Assert.AreEqual("Sample", result);
+            Assert.Equal("Sample", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_CodeEvalParameter01()
         {
             // Arrange
@@ -61,18 +61,18 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run("Meziantou");
 
             // Assert
-            Assert.AreEqual("Hello Meziantou!", result);
+            Assert.Equal("Hello Meziantou!", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_CodeEvalParameter02()
         {
             // Arrange
             var template = new Template();
             template.Load("Hello <%=Name%>!");
-            var arguments = new Dictionary<string, object>
+            var arguments = new Dictionary<string, object>(StringComparer.Ordinal)
             {
-                { "Name", "Meziantou" }
+                { "Name", "Meziantou" },
             };
             template.AddArguments(arguments);
 
@@ -80,10 +80,10 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run(arguments);
 
             // Assert
-            Assert.AreEqual("Hello Meziantou!", result);
+            Assert.Equal("Hello Meziantou!", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_Loop01()
         {
             // Arrange
@@ -94,10 +94,10 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run();
 
             // Assert
-            Assert.AreEqual("Hello 12345!", result);
+            Assert.Equal("Hello 12345!", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_UntypedArgument()
         {
             // Arrange
@@ -109,15 +109,17 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run("John");
 
             // Assert
-            Assert.AreEqual("Hello John!", result);
+            Assert.Equal("Hello John!", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_Debug()
         {
             // Arrange
-            var template = new Template();
-            template.Debug = true;
+            var template = new Template
+            {
+                Debug = true,
+            };
             template.Load(@"Hello <%= 
 #if DEBUG
 ""debug""
@@ -132,15 +134,17 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run();
 
             // Assert
-            Assert.AreEqual("Hello debug!", result);
+            Assert.Equal("Hello debug!", result);
         }
 
-        [TestMethod]
+        [Fact]
         public void Template_Release()
         {
             // Arrange
-            var template = new Template();
-            template.Debug = false;
+            var template = new Template
+            {
+                Debug = false,
+            };
             template.Load(@"Hello <%= 
 #if DEBUG
 ""debug""
@@ -155,7 +159,7 @@ namespace Meziantou.Framework.Templating.Tests
             var result = template.Run();
 
             // Assert
-            Assert.AreEqual("Hello release!", result);
+            Assert.Equal("Hello release!", result);
         }
     }
 }

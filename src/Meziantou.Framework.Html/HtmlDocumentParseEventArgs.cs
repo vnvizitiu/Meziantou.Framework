@@ -1,10 +1,11 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.ComponentModel;
 using System.Text;
 
 namespace Meziantou.Framework.Html
 {
-    public class HtmlDocumentParseEventArgs : CancelEventArgs
+    public sealed class HtmlDocumentParseEventArgs : CancelEventArgs
     {
         public HtmlDocumentParseEventArgs(HtmlReader reader)
         {

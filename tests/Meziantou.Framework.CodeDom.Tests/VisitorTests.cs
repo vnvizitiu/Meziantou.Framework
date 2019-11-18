@@ -1,20 +1,16 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Meziantou.Framework.CodeDom.Tests
 {
-    [TestClass]
     public class VisitorTests
     {
-        [TestMethod]
+        [Fact]
         public void DefaultVisitor_AcceptAnyCodeObject()
         {
             var types = typeof(CodeObject).Assembly.GetTypes()
-                .Where(t => t.IsPublic && !t.IsAbstract && !t.ContainsGenericParameters)
-                .Where(t => typeof(CodeObject).IsAssignableFrom(t))
-                .Where(t => t != typeof(CommentCollection))
-                .Where(t => t != typeof(XmlCommentCollection))
+                .Where(t => t.IsPublic && !t.IsAbstract && !t.ContainsGenericParameters && typeof(CodeObject).IsAssignableFrom(t) && t != typeof(CommentCollection) && t != typeof(XmlCommentCollection))
                 .OrderBy(t => t.FullName)
                 .ToList();
 
@@ -28,7 +24,7 @@ namespace Meziantou.Framework.CodeDom.Tests
                 }
                 catch (Exception ex)
                 {
-                    Assert.Fail("Cannot visit " + type.FullName + ": " + ex);
+                    Assert.True(false, "Cannot visit " + type.FullName + ": " + ex);
                 }
             }
         }

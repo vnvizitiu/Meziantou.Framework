@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -7,12 +8,12 @@ using System.Xml;
 namespace Meziantou.Framework.Html
 {
     [DebuggerDisplay("'{Value}'")]
-    public class HtmlText : HtmlNode
+    public sealed class HtmlText : HtmlNode
     {
         private string _value;
         private bool _cData;
 
-        protected internal HtmlText(HtmlDocument ownerDocument)
+        internal HtmlText(HtmlDocument ownerDocument)
             : base(string.Empty, "#text", string.Empty, ownerDocument)
         {
         }
@@ -25,9 +26,9 @@ namespace Meziantou.Framework.Html
 
         public override HtmlNodeType NodeType => HtmlNodeType.Text;
 
-        public virtual bool IsWhitespace => string.IsNullOrWhiteSpace(Value);
+        public bool IsWhitespace => string.IsNullOrWhiteSpace(Value);
 
-        public virtual bool IsCData
+        public bool IsCData
         {
             get => _cData;
             set
@@ -54,7 +55,7 @@ namespace Meziantou.Framework.Html
             get => Value;
             set
             {
-                if (value != Value)
+                if (!string.Equals(value, Value, StringComparison.Ordinal))
                 {
                     Value = value;
                     OnPropertyChanged();
@@ -68,7 +69,7 @@ namespace Meziantou.Framework.Html
 
             set
             {
-                if (value != Value)
+                if (!string.Equals(value, Value, StringComparison.Ordinal))
                 {
                     Value = value;
                     OnPropertyChanged();
@@ -81,7 +82,7 @@ namespace Meziantou.Framework.Html
             get => _value;
             set
             {
-                if (value != _value)
+                if (!string.Equals(value, _value, StringComparison.Ordinal))
                 {
                     _value = value;
                     OnPropertyChanged();

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Meziantou.Framework
@@ -22,7 +24,7 @@ namespace Meziantou.Framework
             }
         }
 
-        public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T> items)
+        public static void AddRange<T>(this ICollection<T> collection, IEnumerable<T>? items)
         {
             if (collection == null)
                 throw new ArgumentNullException(nameof(collection));
@@ -64,7 +66,8 @@ namespace Meziantou.Framework
             }
         }
 
-        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> source) where T : class
+        [return: NotNullIfNotNull(parameterName: "source")]
+        public static IEnumerable<T>? WhereNotNull<T>(this IEnumerable<T>? source) where T : class
         {
             if (source == null)
                 return null;
@@ -72,12 +75,14 @@ namespace Meziantou.Framework
             return source.Where(item => item != null);
         }
 
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        [return: NotNullIfNotNull(parameterName: "source")]
+        public static IEnumerable<TSource>? DistinctBy<TSource, TKey>(this IEnumerable<TSource>? source, Func<TSource, TKey> keySelector)
         {
             return DistinctBy(source, keySelector, EqualityComparer<TKey>.Default);
         }
 
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
+        [return: NotNullIfNotNull(parameterName: "source")]
+        public static IEnumerable<TSource>? DistinctBy<TSource, TKey>(this IEnumerable<TSource>? source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey>? comparer)
         {
             if (source == null)
                 return null;
@@ -109,15 +114,12 @@ namespace Meziantou.Framework
                 throw new ArgumentNullException(nameof(comparer));
 
             var index = 0;
-            using (var enumerator = list.GetEnumerator())
+            foreach (var item in list)
             {
-                while (enumerator.MoveNext())
-                {
-                    if (comparer.Equals(enumerator.Current, value))
-                        return index;
+                if (comparer.Equals(item, value))
+                    return index;
 
-                    index++;
-                }
+                index++;
             }
 
             return -1;
@@ -136,15 +138,12 @@ namespace Meziantou.Framework
                 throw new ArgumentNullException(nameof(comparer));
 
             var index = 0L;
-            using (var enumerator = list.GetEnumerator())
+            foreach (var item in list)
             {
-                while (enumerator.MoveNext())
-                {
-                    if (comparer.Equals(enumerator.Current, value))
-                        return index;
+                if (comparer.Equals(item, value))
+                    return index;
 
-                    index++;
-                }
+                index++;
             }
 
             return -1L;
@@ -163,20 +162,28 @@ namespace Meziantou.Framework
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
 
-            using (var enumerator = source.GetEnumerator())
+            using var enumerator = source.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                while (enumerator.MoveNext())
-                {
-                }
             }
         }
 
         public static Task ForEachAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, Task> action)
         {
-            return ForEachAsync(source, Environment.ProcessorCount, action);
+            return ForEachAsync(source, action, CancellationToken.None);
+        }
+
+        public static Task ForEachAsync<TSource>(this IEnumerable<TSource> source, Func<TSource, Task> action, CancellationToken cancellationToken)
+        {
+            return ForEachAsync(source, Environment.ProcessorCount, action, cancellationToken);
         }
 
         public static Task ForEachAsync<TSource>(this IEnumerable<TSource> source, int degreeOfParallelism, Func<TSource, Task> action)
+        {
+            return ForEachAsync(source, degreeOfParallelism, action, CancellationToken.None);
+        }
+
+        public static Task ForEachAsync<TSource>(this IEnumerable<TSource> source, int degreeOfParallelism, Func<TSource, Task> action, CancellationToken cancellationToken)
         {
             if (source == null)
                 throw new ArgumentNullException(nameof(source));
@@ -188,10 +195,10 @@ namespace Meziantou.Framework
                             {
                                 while (partition.MoveNext())
                                 {
-                                    await action(partition.Current);
+                                    await action(partition.Current).ConfigureAwait(false);
                                 }
                             }
-                        });
+                        }, cancellationToken);
 
             return Task.WhenAll(tasks);
         }
@@ -208,7 +215,7 @@ namespace Meziantou.Framework
             try
             {
                 if (!enumerator.MoveNext())
-                    throw new ArgumentException("Collection is empty");
+                    throw new ArgumentException("Collection is empty", nameof(enumerable));
 
                 var maxElem = enumerator.Current;
                 var maxVal = selector(maxElem);
@@ -247,7 +254,7 @@ namespace Meziantou.Framework
             try
             {
                 if (!enumerator.MoveNext())
-                    throw new ArgumentException("Collection is empty");
+                    throw new ArgumentException("Collection is empty", nameof(enumerable));
 
                 var maxElem = enumerator.Current;
                 var maxVal = selector(maxElem);
@@ -283,7 +290,7 @@ namespace Meziantou.Framework
             try
             {
                 if (!enumerator.MoveNext())
-                    throw new ArgumentException("Collection is empty");
+                    throw new ArgumentException("Collection is empty", nameof(enumerable));
 
                 var maxVal = enumerator.Current;
 
@@ -316,7 +323,7 @@ namespace Meziantou.Framework
             try
             {
                 if (!enumerator.MoveNext())
-                    throw new ArgumentException("Collection is empty");
+                    throw new ArgumentException("Collection is empty", nameof(enumerable));
 
                 var minElem = enumerator.Current;
                 var minVal = selector(minElem);
@@ -355,7 +362,7 @@ namespace Meziantou.Framework
             try
             {
                 if (!enumerator.MoveNext())
-                    throw new ArgumentException("Collection is empty");
+                    throw new ArgumentException("Collection is empty", nameof(enumerable));
 
                 var minElem = enumerator.Current;
                 var minVal = selector(minElem);
@@ -391,7 +398,7 @@ namespace Meziantou.Framework
             try
             {
                 if (!enumerator.MoveNext())
-                    throw new ArgumentException("Collection is empty");
+                    throw new ArgumentException("Collection is empty", nameof(enumerable));
 
                 var minVal = enumerator.Current;
 

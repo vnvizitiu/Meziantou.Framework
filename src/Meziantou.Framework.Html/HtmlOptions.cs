@@ -1,14 +1,15 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections.Generic;
 
 namespace Meziantou.Framework.Html
 {
-    public class HtmlOptions
+    public sealed class HtmlOptions
     {
         private readonly Dictionary<string, HtmlElementReadOptions> _readOptions = new Dictionary<string, HtmlElementReadOptions>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, HtmlElementWriteOptions> _writeOptions = new Dictionary<string, HtmlElementWriteOptions>(StringComparer.OrdinalIgnoreCase);
-        private readonly HashSet<string> _emptyNamespacesForXPath = new HashSet<string>();
-        private readonly HashSet<string> _emptyNamespaces = new HashSet<string>();
+        private readonly HashSet<string> _emptyNamespacesForXPath = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _emptyNamespaces = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _parsedScriptTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public HtmlOptions()
@@ -138,7 +139,7 @@ namespace Meziantou.Framework.Html
             _emptyNamespacesForXPath.Add(HtmlNode.XhtmlNamespaceURI);
         }
 
-        public virtual HtmlElementWriteOptions GetElementWriteOptions(string name)
+        public HtmlElementWriteOptions GetElementWriteOptions(string name)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -147,7 +148,7 @@ namespace Meziantou.Framework.Html
             return options;
         }
 
-        public virtual void SetElementWriteOptions(string name, HtmlElementWriteOptions options)
+        public void SetElementWriteOptions(string name, HtmlElementWriteOptions options)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -163,7 +164,7 @@ namespace Meziantou.Framework.Html
             return ParsedScriptTypes.Contains(type);
         }
 
-        public virtual HtmlElementReadOptions GetElementReadOptions(string name)
+        public HtmlElementReadOptions GetElementReadOptions(string name)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -172,7 +173,7 @@ namespace Meziantou.Framework.Html
             return options;
         }
 
-        public virtual void SetElementReadOptions(string name, HtmlElementReadOptions options)
+        public void SetElementReadOptions(string name, HtmlElementReadOptions options)
         {
             if (name == null)
                 throw new ArgumentNullException(nameof(name));
@@ -180,14 +181,14 @@ namespace Meziantou.Framework.Html
             _readOptions[name] = options;
         }
 
-        public virtual ISet<string> ParsedScriptTypes => _parsedScriptTypes;
+        public ISet<string> ParsedScriptTypes => _parsedScriptTypes;
 
-        public virtual ISet<string> EmptyNamespaces => _emptyNamespaces;
+        public ISet<string> EmptyNamespaces => _emptyNamespaces;
 
-        public virtual ISet<string> EmptyNamespacesForXPath => _emptyNamespacesForXPath;
+        public ISet<string> EmptyNamespacesForXPath => _emptyNamespacesForXPath;
 
-        public virtual bool ReaderThrowsOnEncodingMismatch { get; set; }
-        public virtual bool ReaderRestartsOnEncodingDetected { get; set; }
-        public virtual bool ReaderThrowsOnUnknownDetectedEncoding { get; set; }
+        public bool ReaderThrowsOnEncodingMismatch { get; set; }
+        public bool ReaderRestartsOnEncodingDetected { get; set; }
+        public bool ReaderThrowsOnUnknownDetectedEncoding { get; set; }
     }
 }

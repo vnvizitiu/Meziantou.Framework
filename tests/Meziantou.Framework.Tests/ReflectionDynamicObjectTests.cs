@@ -1,95 +1,96 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Globalization;
+using Xunit;
 
 namespace Meziantou.Framework.Tests
 {
-    [TestClass]
     public class ReflectionDynamicObjectTests
     {
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject()
         {
             var test = new Test();
             dynamic rdo = new ReflectionDynamicObject(test);
 
-            Assert.AreEqual(42, rdo._privateField);
-            Assert.AreEqual(10, rdo.PrivateProperty);
-            Assert.AreEqual(1, rdo[1]);
-            Assert.AreEqual(3, rdo[1, 2]);
-            Assert.AreEqual("test", rdo["test"]);
+            Assert.Equal(42, rdo._privateField);
+            Assert.Equal(10, rdo.PrivateProperty);
+            Assert.Equal(1, rdo[1]);
+            Assert.Equal(3, rdo[1, 2]);
+            Assert.Equal("test", rdo["test"]);
             rdo["test"] = "sample";
-            Assert.AreEqual("testsample", rdo["test"]);
-            Assert.AreEqual(42, rdo.PrivateMethod());
-            Assert.AreEqual(1, rdo.PrivateMethodWithOverload());
-            Assert.AreEqual(2, rdo.PrivateMethodWithOverload(1));
-            Assert.AreEqual(3L, rdo.PrivateMethodWithOverload(1L));
-            Assert.AreEqual("test", rdo.ProtectedVirtualMethod());
+            Assert.Equal("testsample", rdo["test"]);
+            Assert.Equal(42, rdo.PrivateMethod());
+            Assert.Equal(1, rdo.PrivateMethodWithOverload());
+            Assert.Equal(2, rdo.PrivateMethodWithOverload(1));
+            Assert.Equal(3L, rdo.PrivateMethodWithOverload(1L));
+            Assert.Equal("test", rdo.ProtectedVirtualMethod());
 
             rdo._privateField = 43;
-            Assert.AreEqual(43, rdo._privateField);
-            Assert.AreEqual(43, rdo.PrivateField);
+            Assert.Equal(43, rdo._privateField);
+            Assert.Equal(43, rdo.PrivateField);
         }
 
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject_Inheritance()
         {
             var test = new Test2();
             dynamic rdo = new ReflectionDynamicObject(test);
 
-            Assert.AreEqual(42, rdo._privateField);
-            Assert.AreEqual(11, rdo.PrivateProperty);
-            Assert.AreEqual("test2", rdo.ProtectedVirtualMethod());
+            Assert.Equal(42, rdo._privateField);
+            Assert.Equal(11, rdo.PrivateProperty);
+            Assert.Equal("test2", rdo.ProtectedVirtualMethod());
         }
 
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject_StaticMethod()
         {
             dynamic rdo = new ReflectionDynamicObject(typeof(Test));
-            Assert.AreEqual(1, rdo.Static(1));
+            Assert.Equal(1, rdo.Static(1));
         }
 
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject_StaticProperty()
         {
             dynamic rdo = new ReflectionDynamicObject(typeof(Test));
-            Assert.AreEqual(12, rdo.StaticProperty);
+            Assert.Equal(12, rdo.StaticProperty);
             rdo.StaticProperty = 42;
-            Assert.AreEqual(42, rdo.StaticProperty);
+            Assert.Equal(42, rdo.StaticProperty);
         }
 
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject_DefaultConstructor()
         {
             dynamic rdo = new ReflectionDynamicObject(typeof(Test3)).CreateInstance();
-            Assert.AreEqual(0, rdo.Value);
+            Assert.Equal(0, rdo.Value);
         }
 
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject_IntConstructor()
         {
             dynamic rdo = new ReflectionDynamicObject(typeof(Test3)).CreateInstance(10);
-            Assert.AreEqual(10, rdo.Value);
+            Assert.Equal(10, rdo.Value);
         }
 
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject_StringConstructor()
         {
             dynamic rdo = new ReflectionDynamicObject(typeof(Test3)).CreateInstance("20");
-            Assert.AreEqual(20, rdo.Value);
+            Assert.Equal(20, rdo.Value);
         }
 
-        [TestMethod]
+        [Fact]
         public void ReflectionDynamicObject_StringConstructor_ThrowException()
         {
             var rdo = new ReflectionDynamicObject(typeof(Test3));
-            Assert.ThrowsException<ArgumentException>(() => rdo.CreateInstance("tests"));
+            Assert.Throws<ArgumentException>(() => rdo.CreateInstance("tests"));
         }
 
+#pragma warning disable IDE0051 // Remove unused private members
+#pragma warning disable IDE0032 // Use auto property
+#pragma warning disable MA0038 // Make method static
         private class Test
         {
-#pragma warning disable IDE0032 // Use auto property
             private int _privateField = 42;
-#pragma warning restore IDE0032 // Use auto property
 
             public int PrivateField { get => _privateField; set => _privateField = value; }
 
@@ -135,7 +136,7 @@ namespace Meziantou.Framework.Tests
             private static int StaticProperty { get; set; } = 12;
         }
 
-        private class Test2 : Test
+        private sealed class Test2 : Test
         {
             private int PrivateProperty { get; set; } = 11;
 
@@ -145,7 +146,7 @@ namespace Meziantou.Framework.Tests
             }
         }
 
-        private class Test3
+        private sealed class Test3
         {
             public int Value { get; set; }
 
@@ -160,7 +161,7 @@ namespace Meziantou.Framework.Tests
 
             public Test3(string value)
             {
-                Value = int.Parse(value);
+                Value = int.Parse(value, CultureInfo.InvariantCulture);
             }
         }
     }

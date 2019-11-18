@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -17,18 +17,19 @@ namespace Meziantou.Framework.Scheduling
             SupportedHumanizers = new Dictionary<CultureInfo, RecurrenceRuleHumanizer>
             {
                 { EnglishCultureInfo, new RecurrenceRuleHumanizerEnglish() },
-                { FrenchCultureInfo, new RecurrenceRuleHumanizerFrench() }
+                { FrenchCultureInfo, new RecurrenceRuleHumanizerFrench() },
             };
         }
 
-        public static string GetText(RecurrenceRule rrule)
+        public static string? GetText(RecurrenceRule rrule)
         {
-            return GetText(rrule, null);
+            return GetText(rrule, cultureInfo: null);
         }
 
-        public static string GetText(RecurrenceRule rrule, CultureInfo cultureInfo)
+        public static string? GetText(RecurrenceRule rrule, CultureInfo? cultureInfo)
         {
-            if (rrule == null) throw new ArgumentNullException(nameof(rrule));
+            if (rrule == null)
+                throw new ArgumentNullException(nameof(rrule));
 
             if (cultureInfo == null)
             {

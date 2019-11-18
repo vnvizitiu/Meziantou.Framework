@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 
@@ -10,8 +11,8 @@ namespace Meziantou.Framework.Scheduling
         public static DayOfWeek DefaultFirstDayOfWeek = DayOfWeek.Monday;
         public const string DefaultFirstDayOfWeekString = "MO";
 
-        protected static readonly CultureInfo EnglishCultureInfo = new CultureInfo("en-US");
-        protected static readonly CultureInfo FrenchCultureInfo = new CultureInfo("fr-FR");
+        protected static readonly CultureInfo EnglishCultureInfo = CultureInfo.GetCultureInfo("en-US");
+        protected static readonly CultureInfo FrenchCultureInfo = CultureInfo.GetCultureInfo("fr-FR");
 
         /// <summary>
         /// End date (inclusive)
@@ -20,7 +21,7 @@ namespace Meziantou.Framework.Scheduling
         public int? Occurrences { get; set; }
         public int Interval { get; set; } = 1;
         public DayOfWeek WeekStart { get; set; } = DefaultFirstDayOfWeek;
-        public IList<int> BySetPositions { get; set; }
+        public IList<int>? BySetPositions { get; set; }
 
         public bool IsForever => Occurrences.HasValue || EndDate.HasValue;
 
@@ -32,17 +33,18 @@ namespace Meziantou.Framework.Scheduling
             return recurrenceRule;
         }
 
-        public static bool TryParse(string rrule, out RecurrenceRule recurrenceRule)
+        public static bool TryParse(string rrule, [NotNullWhen(returnValue: true)]out RecurrenceRule? recurrenceRule)
         {
-            return TryParse(rrule, out recurrenceRule, out var error);
+            return TryParse(rrule, out recurrenceRule, out _);
         }
 
-        public static bool TryParse(string rrule, out RecurrenceRule recurrenceRule, out string error)
+        public static bool TryParse(string rrule, [NotNullWhen(returnValue: true)]out RecurrenceRule? recurrenceRule, out string? error)
         {
-            if (rrule == null)
-                throw new ArgumentNullException(nameof(rrule));
             recurrenceRule = null;
             error = null;
+            if (rrule == null)
+                return false;
+
             try
             {
                 // Extract parts
@@ -81,7 +83,7 @@ namespace Meziantou.Framework.Scheduling
                         {
                             ByMonthDays = ParseByMonthDays(values),
                             ByMonths = ParseByMonth(values),
-                            ByWeekDays = ParseByDay(values)
+                            ByWeekDays = ParseByDay(values),
                         };
                         recurrenceRule = dailyRecurrenceRule;
                         break;
@@ -89,7 +91,7 @@ namespace Meziantou.Framework.Scheduling
                         var weeklyRecurrence = new WeeklyRecurrenceRule
                         {
                             ByMonths = ParseByMonth(values),
-                            ByWeekDays = ParseByDay(values)
+                            ByWeekDays = ParseByDay(values),
                         };
                         recurrenceRule = weeklyRecurrence;
                         break;
@@ -98,7 +100,7 @@ namespace Meziantou.Framework.Scheduling
                         {
                             ByWeekDays = ParseByDayWithOffset(values),
                             ByMonthDays = ParseByMonthDays(values),
-                            ByMonths = ParseByMonth(values)
+                            ByMonths = ParseByMonth(values),
                         };
                         recurrenceRule = monthlyRecurrence;
                         break;
@@ -109,7 +111,7 @@ namespace Meziantou.Framework.Scheduling
                             ByMonthDays = ParseByMonthDays(values),
                             BySetPositions = ParseBySetPos(values),
                             ByMonths = ParseByMonth(values),
-                            ByYearDays = ParseByYearDay(values)
+                            ByYearDays = ParseByYearDay(values),
                         };
                         //yearlyRecurrence.ByWeekNo = ParseByWeekNo(values);
                         recurrenceRule = yearlyRecurrence;
@@ -123,7 +125,7 @@ namespace Meziantou.Framework.Scheduling
                 // Set Interval
                 recurrenceRule.Interval = values.GetValue("INTERVAL", 1);
                 recurrenceRule.Occurrences = values.GetValue("COUNT", (int?)null);
-                var until = values.GetValue("UNTIL", (string)null);
+                var until = values.GetValue("UNTIL", (string?)null);
                 if (until != null)
                 {
                     recurrenceRule.EndDate = Utilities.ParseDateTime(until);
@@ -154,12 +156,12 @@ namespace Meziantou.Framework.Scheduling
             return Tuple.Create(name, value);
         }
 
-        private static IList<int> ParseBySetPos(IDictionary<string, string> values)
+        private static IList<int>? ParseBySetPos(IDictionary<string, string> values)
         {
-            return ParseBySetPos(values.GetValue("BYSETPOS", (string)null));
+            return ParseBySetPos(values.GetValue("BYSETPOS", (string?)null));
         }
 
-        private static IList<int> ParseBySetPos(string str)
+        private static IList<int>? ParseBySetPos(string? str)
         {
             if (string.IsNullOrEmpty(str))
                 return null;
@@ -169,16 +171,17 @@ namespace Meziantou.Framework.Scheduling
 
         private static IList<int> ParseByMonthDays(IDictionary<string, string> values)
         {
-            return ParseByMonthDays(values.GetValue("BYMONTHDAY", (string)null));
+            return ParseByMonthDays(values.GetValue("BYMONTHDAY", (string?)null));
         }
 
-        private static IList<int> ParseByMonthDays(string str)
+        private static IList<int> ParseByMonthDays(string? str)
         {
             var monthDays = SplitToInt32List(str);
             foreach (var monthDay in monthDays)
             {
                 if ((monthDay >= 1 && monthDay <= 31) || (monthDay <= -1 && monthDay >= -31))
                     continue;
+
                 throw new FormatException($"Monthday '{monthDay}' is invalid.");
             }
             return monthDays;
@@ -186,10 +189,10 @@ namespace Meziantou.Framework.Scheduling
 
         private static IList<Month> ParseByMonth(IDictionary<string, string> values)
         {
-            return ParseByMonth(values.GetValue("BYMONTH", (string)null));
+            return ParseByMonth(values.GetValue("BYMONTH", (string?)null));
         }
 
-        private static IList<Month> ParseByMonth(string str)
+        private static IList<Month> ParseByMonth(string? str)
         {
             var months = SplitToMonthList(str);
             foreach (var month in months)
@@ -204,10 +207,10 @@ namespace Meziantou.Framework.Scheduling
 
         private static IList<int> ParseByYearDay(IDictionary<string, string> values)
         {
-            return ParseByYearDay(values.GetValue("BYYEARDAY", (string)null));
+            return ParseByYearDay(values.GetValue("BYYEARDAY", (string?)null));
         }
 
-        private static IList<int> ParseByYearDay(string str)
+        private static IList<int> ParseByYearDay(string? str)
         {
             var yearDays = SplitToInt32List(str);
             foreach (var yearDay in yearDays)
@@ -221,25 +224,29 @@ namespace Meziantou.Framework.Scheduling
 
         private static DayOfWeek ParseWeekStart(IDictionary<string, string> values)
         {
-            return ParseDayOfWeek(values.GetValue("WKST", DefaultFirstDayOfWeekString));
+            var str = values.GetValue("WKST", DefaultFirstDayOfWeekString);
+            if (string.IsNullOrEmpty(str))
+                return DefaultFirstDayOfWeek;
+
+            return ParseDayOfWeek(str);
         }
 
         private static IList<ByDay> ParseByDayWithOffset(IDictionary<string, string> values)
         {
-            return ParseByDayWithOffset(values.GetValue("BYDAY", (string)null));
+            return ParseByDayWithOffset(values.GetValue("BYDAY", (string?)null));
         }
 
-        private static IList<ByDay> ParseByDayWithOffset(string str)
+        private static IList<ByDay> ParseByDayWithOffset(string? str)
         {
             return SplitToStringList(str).Select(ParseDayOfWeekWithOffset).ToList();
         }
 
         private static IList<DayOfWeek> ParseByDay(IDictionary<string, string> values)
         {
-            return ParseByDay(values.GetValue("BYDAY", (string)null));
+            return ParseByDay(values.GetValue("BYDAY", (string?)null));
         }
 
-        private static IList<DayOfWeek> ParseByDay(string str)
+        private static IList<DayOfWeek> ParseByDay(string? str)
         {
             return SplitToStringList(str).Select(ParseDayOfWeek).ToList();
         }
@@ -258,7 +265,7 @@ namespace Meziantou.Framework.Scheduling
                 }
                 else
                 {
-                    return new ByDay(ParseDayOfWeek(str.Substring(i)), int.Parse(str.Substring(0, i)));
+                    return new ByDay(ParseDayOfWeek(str.Substring(i)), int.Parse(str.Substring(0, i), CultureInfo.InvariantCulture));
                 }
             }
 
@@ -267,28 +274,20 @@ namespace Meziantou.Framework.Scheduling
 
         private static DayOfWeek ParseDayOfWeek(string str)
         {
-            switch (str.ToUpperInvariant())
+            return str.ToUpperInvariant() switch
             {
-                case "SU":
-                    return DayOfWeek.Sunday;
-                case "MO":
-                    return DayOfWeek.Monday;
-                case "TU":
-                    return DayOfWeek.Tuesday;
-                case "WE":
-                    return DayOfWeek.Wednesday;
-                case "TH":
-                    return DayOfWeek.Thursday;
-                case "FR":
-                    return DayOfWeek.Friday;
-                case "SA":
-                    return DayOfWeek.Saturday;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(str));
-            }
+                "SU" => DayOfWeek.Sunday,
+                "MO" => DayOfWeek.Monday,
+                "TU" => DayOfWeek.Tuesday,
+                "WE" => DayOfWeek.Wednesday,
+                "TH" => DayOfWeek.Thursday,
+                "FR" => DayOfWeek.Friday,
+                "SA" => DayOfWeek.Saturday,
+                _ => throw new FormatException($"Day of week '{str}' is invalid."),
+            };
         }
 
-        protected static IEnumerable<T> FilterBySetPosition<T>(IList<T> source, IList<int> setPositions)
+        protected static IEnumerable<T>? FilterBySetPosition<T>(IList<T>? source, IList<int>? setPositions)
         {
             if (source == null || setPositions == null || !setPositions.Any())
                 return source;
@@ -315,14 +314,14 @@ namespace Meziantou.Framework.Scheduling
             return result;
         }
 
-        protected static bool IsEmpty<T>(IList<T> list)
+        protected static bool IsEmpty<T>([NotNullWhen(false)] IList<T>? list)
         {
             return list == null || list.Count == 0;
         }
 
-        protected static IEnumerable<T> Intersect<T>(params IEnumerable<T>[] enumerables)
+        private protected static IEnumerable<T>? Intersect<T>(params IEnumerable<T>?[] enumerables)
         {
-            IEnumerable<T> result = null;
+            IEnumerable<T>? result = null;
             foreach (var enumerable in enumerables)
             {
                 if (enumerable == null)
@@ -341,9 +340,9 @@ namespace Meziantou.Framework.Scheduling
             return result;
         }
 
-        protected static List<DateTime> ResultByWeekDaysInMonth(DateTime startOfMonth, IList<ByDay> byWeekDays)
+        private protected static List<DateTime>? ResultByWeekDaysInMonth(DateTime startOfMonth, IList<ByDay> byWeekDays)
         {
-            List<DateTime> resultByDays = null;
+            List<DateTime>? resultByDays = null;
             if (!IsEmpty(byWeekDays))
             {
                 resultByDays = new List<DateTime>();
@@ -397,9 +396,9 @@ namespace Meziantou.Framework.Scheduling
             return resultByDays;
         }
 
-        protected static List<DateTime> ResultByMonthDays(DateTime startOfMonth, IList<int> byMonthDays)
+        private protected static List<DateTime>? ResultByMonthDays(DateTime startOfMonth, IList<int> byMonthDays)
         {
-            List<DateTime> resultByMonthDays = null;
+            List<DateTime>? resultByMonthDays = null;
             if (!IsEmpty(byMonthDays))
             {
                 resultByMonthDays = new List<DateTime>();
@@ -419,10 +418,11 @@ namespace Meziantou.Framework.Scheduling
                 resultByMonthDays.Sort();
                 //resultByMonthDays = FilterBySetPosition(resultByMonthDays, BySetPositions).ToList();
             }
+
             return resultByMonthDays;
         }
 
-        private static IEnumerable<string> SplitToList(string text)
+        private static IEnumerable<string> SplitToList(string? text)
         {
             if (text == null)
                 yield break;
@@ -435,12 +435,12 @@ namespace Meziantou.Framework.Scheduling
             }
         }
 
-        private static List<string> SplitToStringList(string text)
+        private static List<string> SplitToStringList(string? text)
         {
             return SplitToList(text).ToList();
         }
 
-        private static List<int> SplitToInt32List(string text)
+        private static List<int> SplitToInt32List(string? text)
         {
             var list = new List<int>();
             foreach (var str in SplitToList(text))
@@ -453,12 +453,12 @@ namespace Meziantou.Framework.Scheduling
             return list;
         }
 
-        private static List<Month> SplitToMonthList(string text)
+        private static List<Month> SplitToMonthList(string? text)
         {
             var list = new List<Month>();
             foreach (var str in SplitToList(text))
             {
-                if (str.Length != 0 && Enum.TryParse<Month>(str, true, out var month))
+                if (str.Length != 0 && Enum.TryParse<Month>(str, ignoreCase: true, out var month))
                 {
                     list.Add(month);
                 }

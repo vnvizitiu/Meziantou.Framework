@@ -4,11 +4,11 @@ using System.Globalization;
 
 namespace Meziantou.Framework.Versioning
 {
-    internal class SemanticVersionComparer : IComparer<SemanticVersion>, IEqualityComparer<SemanticVersion>
+    internal sealed class SemanticVersionComparer : IComparer<SemanticVersion>, IEqualityComparer<SemanticVersion>
     {
         public static SemanticVersionComparer Instance { get; } = new SemanticVersionComparer();
 
-        public int Compare(SemanticVersion x, SemanticVersion y)
+        public int Compare(SemanticVersion? x, SemanticVersion? y)
         {
             if (ReferenceEquals(x, y))
                 return 0;
@@ -77,12 +77,12 @@ namespace Meziantou.Framework.Versioning
             return 0;
         }
 
-        public bool Equals(SemanticVersion x, SemanticVersion y)
+        public bool Equals(SemanticVersion? x, SemanticVersion? y)
         {
             return Compare(x, y) == 0;
         }
 
-        public int GetHashCode(SemanticVersion obj)
+        public int GetHashCode(SemanticVersion? obj)
         {
             if (obj == null)
                 return 0;
@@ -94,7 +94,7 @@ namespace Meziantou.Framework.Versioning
             {
                 for (var i = 0; i < obj.PrereleaseLabels.Count; i++)
                 {
-                    hash = (hash * 397) ^ obj.PrereleaseLabels[i].GetHashCode();
+                    hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(obj.PrereleaseLabels[i]);
                 }
             }
 

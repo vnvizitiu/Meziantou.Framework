@@ -1,30 +1,54 @@
+# https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted?view=azure-devops&tabs=yaml#use-a-microsoft-hosted-agent
+pool:
+  vmImage: 'windows-2019'
+
+trigger:
+- '*'
+
 variables:
   solution: Meziantou.Framework.sln
   buildConfiguration: Release
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
 
 steps:
+- task: DotNetCoreInstaller@0
+  displayName: 'Use .NET Core sdk'
+  inputs:
+    version: 3.0.100
 
 - task: DotNetCoreCLI@2
   displayName: dotnet build
   inputs:
-    projects: 'src/**/*.csproj'
+    projects: '**/*.csproj'
     arguments: '--configuration $(BuildConfiguration)'
 
 - task: DotNetCoreCLI@2
   displayName: dotnet test
   inputs:
     command: test
-    arguments: '--configuration $(BuildConfiguration)'
-    projects: 'tests/**/*.csproj'
+    arguments: '--configuration $(BuildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+    projects: 'tests/**/*Tests.csproj'
     nobuild: true
+- script: |
+    dotnet tool install -g dotnet-reportgenerator-globaltool
+    reportgenerator -reports:$(Build.SourcesDirectory)/tests/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/CodeCoverage -reporttypes:HtmlInline_AzurePipelines;Cobertura
+  displayName: Create Code coverage report
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage'
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(Build.SourcesDirectory)/CodeCoverage/Cobertura.xml'
+    reportDirectory: '$(Build.SourcesDirectory)/CodeCoverage'
 
 - task: DotNetCoreCLI@2
   displayName: dotnet pack
   inputs:
-    command: pack
+    command: 'pack'
     packagesToPack: 'src/**/*.csproj'
     nobuild: true
+    includesymbols: true
+    versioningScheme: 'off'
 
 - powershell: |
     Write-Host "Searching nupkg in folder: $(Build.ArtifactStagingDirectory)"

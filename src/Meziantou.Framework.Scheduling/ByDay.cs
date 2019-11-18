@@ -2,13 +2,14 @@
 
 namespace Meziantou.Framework.Scheduling
 {
-    public class ByDay : IEquatable<ByDay>
+    public sealed class ByDay : IEquatable<ByDay>
     {
         public ByDay()
         {
         }
 
-        public ByDay(DayOfWeek dayOfWeek) : this(dayOfWeek, null)
+        public ByDay(DayOfWeek dayOfWeek)
+            : this(dayOfWeek, ordinal: null)
         {
         }
 
@@ -23,16 +24,21 @@ namespace Meziantou.Framework.Scheduling
 
         public bool Equals(ByDay other)
         {
-            if (other is null) return false;
-            if (ReferenceEquals(this, other)) return true;
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
             return DayOfWeek == other.DayOfWeek && Ordinal == other.Ordinal;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is null) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
+            if (obj is null)
+                return false;
+            if (ReferenceEquals(this, obj))
+                return true;
+            if (obj.GetType() != GetType())
+                return false;
             return Equals((ByDay)obj);
         }
 

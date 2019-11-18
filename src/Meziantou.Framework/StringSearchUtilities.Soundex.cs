@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
@@ -17,10 +18,12 @@ namespace Meziantou.Framework
         /// <returns> The soundex.</returns>
         /// <exception cref="ArgumentException">Dictionary does not contain character a character of the string <paramref name="s" /></exception>
         [Pure]
-        public static string Soundex(string s, Dictionary<char, byte> dic, Dictionary<string, char> replace = null)
+        public static string Soundex(string s, IReadOnlyDictionary<char, byte> dic, IReadOnlyDictionary<string, char>? replace = null)
         {
-            if (s == null) throw new System.ArgumentNullException(nameof(s));
-            if (dic == null) throw new System.ArgumentNullException(nameof(dic));
+            if (s == null)
+                throw new ArgumentNullException(nameof(s));
+            if (dic == null)
+                throw new ArgumentNullException(nameof(dic));
 
             s = SoundexStringPrep(s, replace);
             if (s.Length == 0)
@@ -89,10 +92,11 @@ namespace Meziantou.Framework
         [Pure]
         public static string Soundex2(string s)
         {
-            if (s == null) throw new System.ArgumentNullException(nameof(s));
+            if (s == null)
+                throw new ArgumentNullException(nameof(s));
 
             var sb = new StringBuilder();
-            foreach (var t in s.TrimStart().ToUpper().RemoveDiacritics())
+            foreach (var t in s.TrimStart().ToUpperInvariant().RemoveDiacritics())
             {
                 if (t != ' ')
                 {
@@ -141,12 +145,12 @@ namespace Meziantou.Framework
                 }
             }
 
-            ChangePrefixe(sb, "MAC", "MCC");
-            ChangePrefixe(sb, "ASA", "AZA");
-            ChangePrefixe(sb, "KN", "NN");
-            ChangePrefixe(sb, "PF", "FF");
-            ChangePrefixe(sb, "SCH", "SSS");
-            ChangePrefixe(sb, "PH", "FF");
+            ChangePrefix(sb, "MAC", "MCC");
+            ChangePrefix(sb, "ASA", "AZA");
+            ChangePrefix(sb, "KN", "NN");
+            ChangePrefix(sb, "PF", "FF");
+            ChangePrefix(sb, "SCH", "SSS");
+            ChangePrefix(sb, "PH", "FF");
 
             // Remove H except if the previous letter is a C or an S
             var cs = false;
@@ -242,7 +246,7 @@ namespace Meziantou.Framework
                     {'L', 4},
                     {'M', 5},
                     {'N', 5},
-                    {'R', 6}
+                    {'R', 6},
                 };
 
             return Soundex(s, dic);
@@ -275,17 +279,20 @@ namespace Meziantou.Framework
                     {'X', 8},
                     {'Z', 8},
                     {'F', 9},
-                    {'V', 9}
+                    {'V', 9},
                 };
 
             return Soundex(s, dic);
         }
 
-        private static void ChangePrefixe(StringBuilder sb, string prefix, string replace)
+        private static void ChangePrefix(StringBuilder sb, string prefix, string replace)
         {
-            if (sb == null) throw new System.ArgumentNullException(nameof(sb));
-            if (prefix == null) throw new System.ArgumentNullException(nameof(prefix));
-            if (replace == null) throw new System.ArgumentNullException(nameof(replace));
+            if (sb == null)
+                throw new ArgumentNullException(nameof(sb));
+            if (prefix == null)
+                throw new ArgumentNullException(nameof(prefix));
+            if (replace == null)
+                throw new ArgumentNullException(nameof(replace));
 
             var i = 0;
             while (i < sb.Length && i < prefix.Length)
@@ -303,13 +310,14 @@ namespace Meziantou.Framework
         }
 
         [Pure]
-        private static string SoundexStringPrep(string s, Dictionary<string, char> replace = null)
+        private static string SoundexStringPrep(string s, IReadOnlyDictionary<string, char>? replace = null)
         {
-            if (s == null) throw new System.ArgumentNullException(nameof(s));
+            if (s == null)
+                throw new ArgumentNullException(nameof(s));
 
             // takes only the first word of the string.
             var sb = new StringBuilder();
-            foreach (var t in s.TrimStart().ToUpper().RemoveDiacritics())
+            foreach (var t in s.TrimStart().ToUpperInvariant().RemoveDiacritics())
             {
                 if (char.IsWhiteSpace(t))
                     break; // Exit after the first space
@@ -329,7 +337,7 @@ namespace Meziantou.Framework
             {
                 foreach (var pair in replace)
                 {
-                    sb = sb.Replace(pair.Key, pair.Value.ToString());
+                    sb = sb.Replace(pair.Key, pair.Value.ToString(CultureInfo.InvariantCulture));
                 }
             }
 

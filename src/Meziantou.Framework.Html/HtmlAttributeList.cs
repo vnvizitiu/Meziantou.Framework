@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -26,7 +27,7 @@ namespace Meziantou.Framework.Html
 
         public HtmlAttribute Add(string prefix, string localName, string namespaceURI)
         {
-            return Add(prefix, localName, namespaceURI, null);
+            return Add(prefix, localName, namespaceURI, value: null);
         }
 
         public HtmlAttribute Add(string prefix, string localName, string namespaceURI, string value)
@@ -67,7 +68,7 @@ namespace Meziantou.Framework.Html
 
         public void Add(HtmlAttribute attribute)
         {
-            Add(attribute, true);
+            Add(attribute, replace: true);
         }
 
         public void Add(HtmlAttribute attribute, bool replace)
@@ -76,7 +77,7 @@ namespace Meziantou.Framework.Html
                 throw new ArgumentNullException(nameof(attribute));
 
             if (attribute.ParentNode != null)
-                throw new ArgumentException(null, nameof(attribute));
+                throw new ArgumentException(message: null, nameof(attribute));
 
             var att = this[attribute.LocalName, attribute.NamespaceURI];
             if (att != null)
@@ -107,8 +108,12 @@ namespace Meziantou.Framework.Html
 
             foreach (var att in _attributes)
             {
-                if ((att.Name == HtmlNode.XmlnsPrefix || att.Prefix == HtmlNode.XmlnsPrefix) && att.Value == namespaceURI)
+                if ((string.Equals(att.Name, HtmlNode.XmlnsPrefix, StringComparison.Ordinal) ||
+                    string.Equals(att.Prefix, HtmlNode.XmlnsPrefix, StringComparison.Ordinal)) &&
+                    string.Equals(att.Value, namespaceURI, StringComparison.Ordinal))
+                {
                     return att.LocalName;
+                }
             }
 
             return null;
@@ -119,7 +124,7 @@ namespace Meziantou.Framework.Html
             foreach (var att in _attributes)
             {
                 if (att.ParentNode != Parent)
-                    throw new ArgumentException();
+                    throw new InvalidOperationException();
 
                 att.ParentNode = null;
             }
@@ -133,7 +138,7 @@ namespace Meziantou.Framework.Html
                 throw new ArgumentNullException(nameof(item));
 
             if (item.ParentNode != null)
-                throw new ArgumentException(null, nameof(item));
+                throw new ArgumentException(message: null, nameof(item));
 
             _attributes.Insert(index, item);
             item.ParentNode = Parent;
@@ -173,7 +178,7 @@ namespace Meziantou.Framework.Html
 
             return _attributes.FindIndex(a =>
                 localName.EqualsIgnoreCase(a.LocalName) &&
-                a.NamespaceURI != null && namespaceURI == a.NamespaceURI);
+                a.NamespaceURI != null && string.Equals(namespaceURI, a.NamespaceURI, StringComparison.Ordinal));
         }
 
         public bool RemoveAt(int index)
@@ -183,7 +188,7 @@ namespace Meziantou.Framework.Html
 
             var att = _attributes[index];
             if (att.ParentNode != Parent)
-                throw new ArgumentException(null, nameof(index));
+                throw new ArgumentException(message: null, nameof(index));
 
             _attributes.RemoveAt(index);
             att.ParentNode = null;
@@ -210,7 +215,7 @@ namespace Meziantou.Framework.Html
             if (localName == null)
                 throw new ArgumentNullException(nameof(localName));
 
-            var att = _attributes.Find(a => localName.EqualsIgnoreCase(a.LocalName) && prefix == a.Prefix);
+            var att = _attributes.Find(a => localName.EqualsIgnoreCase(a.LocalName) && string.Equals(prefix, a.Prefix, StringComparison.Ordinal));
             if (att == null)
                 return false;
 
@@ -250,10 +255,10 @@ namespace Meziantou.Framework.Html
                 throw new ArgumentNullException(nameof(attribute));
 
             if (attribute.ParentNode != Parent)
-                throw new ArgumentException(null, nameof(attribute));
+                throw new ArgumentException(message: null, nameof(attribute));
 
             if (!_attributes.Remove(attribute))
-                throw new ArgumentException(null, nameof(attribute));
+                throw new ArgumentException(message: null, nameof(attribute));
 
             attribute.ParentNode = null;
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, attribute));
@@ -275,7 +280,7 @@ namespace Meziantou.Framework.Html
                     throw new ArgumentNullException(nameof(value));
 
                 if (value.ParentNode != null)
-                    throw new ArgumentException(null, nameof(value));
+                    throw new ArgumentException(message: null, nameof(value));
 
                 var index = IndexOf(name);
                 if (index < 0)
@@ -301,7 +306,7 @@ namespace Meziantou.Framework.Html
 
                 return _attributes.Find(a =>
                     localName.EqualsIgnoreCase(a.LocalName) &&
-                    a.NamespaceURI != null && namespaceURI == a.NamespaceURI);
+                    a.NamespaceURI != null && string.Equals(namespaceURI, a.NamespaceURI, StringComparison.Ordinal));
             }
             set
             {
@@ -309,7 +314,7 @@ namespace Meziantou.Framework.Html
                     throw new ArgumentNullException(nameof(value));
 
                 if (value.ParentNode != null)
-                    throw new ArgumentException(null, nameof(value));
+                    throw new ArgumentException(message: null, nameof(value));
 
                 var index = IndexOf(localName, namespaceURI);
                 if (index < 0)

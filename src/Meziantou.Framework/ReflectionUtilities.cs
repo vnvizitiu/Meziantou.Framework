@@ -31,10 +31,10 @@ namespace Meziantou.Framework
             if (!type.IsEnum)
                 return false;
 
-            return type.IsDefined(typeof(FlagsAttribute), true);
+            return type.IsDefined(typeof(FlagsAttribute), inherit: true);
         }
 
-        public static MethodInfo GetImplicitConversion(object value, Type targetType)
+        public static MethodInfo? GetImplicitConversion(object? value, Type targetType)
         {
             if (value == null)
                 return null;
@@ -44,7 +44,7 @@ namespace Meziantou.Framework
 
             bool IsImplicitOperator(MethodInfo mi)
             {
-                if (mi.Name != "op_Implicit")
+                if (!string.Equals(mi.Name, "op_Implicit", StringComparison.Ordinal))
                     return false;
 
                 if (!targetType.IsAssignableFrom(mi.ReturnType))

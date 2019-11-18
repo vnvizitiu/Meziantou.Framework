@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.0</TargetFrameworks>
+    <Version>1.0.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meziantou.Framework.TypeConverter\Meziantou.Framework.TypeConverter.csproj" />
+  </ItemGroup>
+
+</Project>

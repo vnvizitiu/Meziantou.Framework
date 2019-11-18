@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Xml;
@@ -6,7 +7,7 @@ using System.Xml;
 namespace Meziantou.Framework.Html
 {
     [DebuggerDisplay("{Name}")]
-    public class HtmlElement : HtmlNode
+    public sealed class HtmlElement : HtmlNode
     {
         private bool? _empty;
         private bool? _dontCloseIfEmpty;
@@ -17,7 +18,7 @@ namespace Meziantou.Framework.Html
         private char _closeChar = '/';
         private HtmlNodeType _nodeType;
 
-        protected internal HtmlElement(string prefix, string localName, string namespaceURI, HtmlDocument ownerDocument)
+        internal HtmlElement(string prefix, string localName, string namespaceURI, HtmlDocument ownerDocument)
             : base(prefix, localName, namespaceURI, ownerDocument)
         {
             _nodeType = IsDocumentType ? HtmlNodeType.DocumentType : HtmlNodeType.Element;
@@ -34,9 +35,9 @@ namespace Meziantou.Framework.Html
         public int DebugId => GetAttributeValue(DebugIdAttributeName, -1);
 #endif
 
-        public virtual bool IsDocumentType => Name.EqualsIgnoreCase("!doctype");
+        public bool IsDocumentType => Name.EqualsIgnoreCase("!doctype");
 
-        public virtual char CloseChar
+        public char CloseChar
         {
             get => _closeChar;
             set
@@ -49,7 +50,7 @@ namespace Meziantou.Framework.Html
             }
         }
 
-        public virtual bool IsProcessingInstruction
+        public bool IsProcessingInstruction
         {
             get => _processingInstruction;
             set
@@ -80,7 +81,7 @@ namespace Meziantou.Framework.Html
             get => base.InnerHtml;
             set
             {
-                if (value != base.InnerHtml)
+                if (!string.Equals(value, base.InnerHtml, StringComparison.Ordinal))
                 {
                     RemoveAll();
                     if (value != null)
@@ -101,7 +102,7 @@ namespace Meziantou.Framework.Html
             }
         }
 
-        public virtual bool IsClosed
+        public bool IsClosed
         {
             get => _closed;
             set
@@ -114,7 +115,7 @@ namespace Meziantou.Framework.Html
             }
         }
 
-        public virtual bool IsEmpty
+        public bool IsEmpty
         {
             get
             {
@@ -160,7 +161,7 @@ namespace Meziantou.Framework.Html
             return null;
         }
 
-        public virtual bool NoChild
+        public bool NoChild
         {
             get
             {
@@ -175,7 +176,7 @@ namespace Meziantou.Framework.Html
             set => _noChild = value;
         }
 
-        public virtual bool AlwaysClose
+        public bool AlwaysClose
         {
             get
             {
@@ -190,7 +191,7 @@ namespace Meziantou.Framework.Html
             set => _alwaysClose = value;
         }
 
-        public virtual bool DontCloseIfEmpty
+        public bool DontCloseIfEmpty
         {
             get
             {
@@ -313,7 +314,7 @@ namespace Meziantou.Framework.Html
             {
                 foreach (var attribute in Attributes)
                 {
-                    if (attribute.Prefix == XmlnsPrefix || attribute.Name == XmlnsPrefix)
+                    if (string.Equals(attribute.Prefix, XmlnsPrefix, StringComparison.Ordinal) || string.Equals(attribute.Name, XmlnsPrefix, StringComparison.Ordinal))
                         continue;
 
                     attribute.WriteTo(writer);

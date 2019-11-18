@@ -1,16 +1,15 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace Meziantou.Framework.Threading.Tests
 {
-    [TestClass]
     public class AsyncReaderWriterLockTests
     {
-        [TestMethod]
+        [Fact]
         public async Task AsyncReaderWriterLock_ReaderWriter()
         {
-            int value = 0;
-            int count = 0;
+            var value = 0;
+            var count = 0;
 
             var l = new AsyncReaderWriterLock();
 
@@ -21,13 +20,13 @@ namespace Meziantou.Framework.Threading.Tests
                 {
                     tasks[i] = Task.Run(async () =>
                     {
-                        using (await l.WriterLockAsync())
+                        using (await l.WriterLockAsync().ConfigureAwait(false))
                         {
                             count++;
-                            Assert.AreEqual(1, count);
+                            Assert.Equal(1, count);
                             value++;
                             count--;
-                            Assert.AreEqual(0, count);
+                            Assert.Equal(0, count);
                         }
                     });
                 }
@@ -35,17 +34,17 @@ namespace Meziantou.Framework.Threading.Tests
                 {
                     tasks[i] = Task.Run(async () =>
                     {
-                        using (await l.ReaderLockAsync())
+                        using (await l.ReaderLockAsync().ConfigureAwait(false))
                         {
-                            Assert.AreEqual(0, count);
-                            Assert.IsTrue(value <= 128);
+                            Assert.Equal(0, count);
+                            Assert.True(value <= 128);
                         }
                     });
                 }
             }
 
-            await Task.WhenAll(tasks);
-            Assert.AreEqual(64, value);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+            Assert.Equal(64, value);
         }
     }
 }

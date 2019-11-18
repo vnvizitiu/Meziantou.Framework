@@ -1,26 +1,54 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Win32.SafeHandles;
 
 namespace Meziantou.Framework
 {
-    public static class ProcessExtensions
+    public static partial class ProcessExtensions
     {
-        private static bool IsWindows()
+        public static void Kill(this Process process, bool entireProcessTree = false)
         {
-#if NETSTANDARD2_0
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#elif NET461
-            return true;
+            if (process == null)
+                throw new ArgumentNullException(nameof(process));
+
+#if NETCOREAPP3_0
+            process.Kill(entireProcessTree);
+#elif NETSTANDARD2_0 || NET461 || NETCOREAPP2_1
+            if (!entireProcessTree)
+            {
+                process.Kill();
+                return;
+            }
+
+            if (!IsWindows())
+                throw new PlatformNotSupportedException("Only supported on Windows");
+
+            var childProcesses = GetDescendantProcesses(process);
+
+            if (!process.HasExited)
+            {
+                process.Kill();
+            }
+
+            foreach (var childProcess in childProcesses)
+            {
+                if (!childProcess.HasExited)
+                {
+                    if (!childProcess.HasExited)
+                    {
+                        childProcess.Kill();
+                    }
+                }
+            }
 #else
 #error Platform not supported
 #endif
         }
 
-        public static void KillProcessTree(this Process process)
+        public static IReadOnlyList<Process> GetDescendantProcesses(this Process process)
         {
             if (process == null)
                 throw new ArgumentNullException(nameof(process));
@@ -28,23 +56,9 @@ namespace Meziantou.Framework
             if (!IsWindows())
                 throw new PlatformNotSupportedException("Only supported on Windows");
 
-            var childProcesses = GetChildProcesses(process);
-            foreach (var childProcess in childProcesses)
-            {
-                if (!childProcess.HasExited)
-                {
-                    childProcess.Kill();
-                }
-            }
-
-            process.Kill();
-
-            foreach (var childProcess in childProcesses)
-            {
-                childProcess.WaitForExit();
-            }
-
-            process.WaitForExit();
+            var children = new List<Process>();
+            GetChildProcesses(process, children, int.MaxValue, 0);
+            return children;
         }
 
         public static IReadOnlyList<Process> GetChildProcesses(this Process process)
@@ -56,192 +70,163 @@ namespace Meziantou.Framework
                 throw new PlatformNotSupportedException("Only supported on Windows");
 
             var children = new List<Process>();
-            GetChildProcesses(process, children);
+            GetChildProcesses(process, children, 1, 0);
             return children;
         }
 
-        private static void GetChildProcesses(Process process, List<Process> children)
+        public static IEnumerable<int> GetAncestorProcessIds(this Process process)
         {
-            var snapShotHandle = CreateToolhelp32Snapshot(SnapshotFlags.TH32CS_SNAPPROCESS, 0);
-            try
-            {
-                var entry = new ProcessEntry32
-                {
-                    dwSize = (uint)Marshal.SizeOf(typeof(ProcessEntry32))
-                };
+            if (process == null)
+                throw new ArgumentNullException(nameof(process));
 
-                var result = Process32First(snapShotHandle, ref entry);
-                while (result != 0)
+            if (!IsWindows())
+                throw new PlatformNotSupportedException("Only supported on Windows");
+
+            return GetAncestorProcessIdsIterator();
+
+            IEnumerable<int> GetAncestorProcessIdsIterator()
+            {
+                var processId = process.Id;
+                var processes = GetProcesses().ToList();
+                var found = true;
+                while (found)
                 {
-                    if (process.Id == entry.th32ParentProcessID)
+                    found = false;
+                    foreach (var entry in processes)
                     {
-                        try
+                        if (entry.ProcessId == processId)
                         {
-                            var child = Process.GetProcessById((int)entry.th32ProcessID);
-                            children.Add(child);
-                            GetChildProcesses(child, children);
-                        }
-                        catch (ArgumentException)
-                        {
-                            // process might have exited since the snapshot, ignore it
+                            yield return entry.ParentProcessId;
+                            processId = entry.ParentProcessId;
+                            found = true;
                         }
                     }
 
-                    result = Process32Next(snapShotHandle, ref entry);
-                }
-            }
-            finally
-            {
-                if (snapShotHandle != IntPtr.Zero)
-                {
-                    CloseHandle(snapShotHandle);
+                    if (!found)
+                        yield break;
                 }
             }
         }
 
-        public static Task<ProcessResult> RunAsTask(string fileName, string arguments, CancellationToken cancellationToken = default)
+        public static int? GetParentProcessId(this Process process)
         {
-            return RunAsTask(fileName, arguments, null, cancellationToken);
-        }
+            if (process == null)
+                throw new ArgumentNullException(nameof(process));
 
-        public static Task<ProcessResult> RunAsTask(string fileName, string arguments, string workingDirectory, CancellationToken cancellationToken = default)
-        {
-            var psi = new ProcessStartInfo
+            if (!IsWindows())
+                throw new PlatformNotSupportedException("Only supported on Windows");
+
+            var processId = process.Id;
+            foreach (var entry in GetProcesses())
             {
-                FileName = fileName,
-                Arguments = arguments,
-                WorkingDirectory = workingDirectory,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-                ErrorDialog = false,
-                UseShellExecute = false
-            };
-
-            return RunAsTask(psi, cancellationToken);
-        }
-
-        public static Task<ProcessResult> RunAsTask(this ProcessStartInfo psi, bool redirectOutput, CancellationToken cancellationToken = default)
-        {
-            if (redirectOutput)
-            {
-                psi.RedirectStandardError = true;
-                psi.RedirectStandardOutput = true;
-                psi.UseShellExecute = false;
-            }
-            else
-            {
-                psi.RedirectStandardError = false;
-                psi.RedirectStandardOutput = false;
-            }
-
-            return RunAsTask(psi, cancellationToken);
-        }
-
-        public static Task<ProcessResult> RunAsTask(this ProcessStartInfo psi, CancellationToken cancellationToken = default)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                return Task.FromCanceled<ProcessResult>(cancellationToken);
-
-            var tcs = new TaskCompletionSource<ProcessResult>();
-            var logs = new List<ProcessOutput>();
-
-            var process = new Process();
-            process.StartInfo = psi;
-            process.EnableRaisingEvents = true;
-            process.Exited += (sender, e) =>
-            {
-                process.WaitForExit();
-                tcs.SetResult(new ProcessResult(process.ExitCode, logs));
-                process.Dispose();
-            };
-            process.ErrorDataReceived += (sender, e) =>
-            {
-                if (e.Data != null)
+                if (entry.ProcessId == processId)
                 {
-                    logs.Add(new ProcessOutput(ProcessOutputType.StandardError, e.Data));
+                    return entry.ParentProcessId;
                 }
-            };
-            process.OutputDataReceived += (sender, e) =>
-            {
-                if (e.Data != null)
-                {
-                    logs.Add(new ProcessOutput(ProcessOutputType.StandardOutput, e.Data));
-                }
-            };
-
-            if (!process.Start())
-                throw new InvalidOperationException($"Cannot start the process '{psi.FileName}'");
-
-            if (psi.RedirectStandardOutput)
-            {
-                process.BeginOutputReadLine();
             }
 
-            if (psi.RedirectStandardError)
+            return null;
+        }
+
+        public static Process? GetParentProcess(this Process process)
+        {
+            var parentProcessId = GetParentProcessId(process);
+            if (parentProcessId == null)
+                return null;
+
+            return Process.GetProcessById(parentProcessId.Value);
+        }
+
+        public static IEnumerable<ProcessEntry> GetProcesses()
+        {
+            using var snapShotHandle = CreateToolhelp32Snapshot(SnapshotFlags.TH32CS_SNAPPROCESS, 0);
+            var entry = new ProcessEntry32
             {
-                process.BeginErrorReadLine();
+                dwSize = (uint)Marshal.SizeOf(typeof(ProcessEntry32)),
+            };
+
+            var result = Process32First(snapShotHandle, ref entry);
+            while (result != 0)
+            {
+                yield return new ProcessEntry(entry.th32ProcessID, entry.th32ParentProcessID);
+                result = Process32Next(snapShotHandle, ref entry);
+            }
+        }
+
+        private static void GetChildProcesses(Process process, List<Process> children, int maxDepth, int currentDepth)
+        {
+            var entries = new List<ProcessEntry>(100);
+            foreach (var entry in GetProcesses())
+            {
+                entries.Add(entry);
             }
 
-            if (cancellationToken.CanBeCanceled)
-            {
-                cancellationToken.Register(() =>
-                {
-                    if (process.HasExited)
-                        return;
+            GetChildProcesses(entries, process, children, maxDepth, currentDepth);
+        }
 
+        private static void GetChildProcesses(List<ProcessEntry> entries, Process process, List<Process> children, int maxDepth, int currentDepth)
+        {
+            var processId = process.Id;
+            foreach (var entry in entries)
+            {
+                if (entry.ParentProcessId == processId)
+                {
                     try
                     {
-                        if (IsWindows())
+                        var child = entry.ToProcess();
+                        children.Add(child);
+                        if (currentDepth < maxDepth)
                         {
-                            process.KillProcessTree();
-                        }
-                        else
-                        {
-                            process.Kill();
+                            GetChildProcesses(entries, child, children, maxDepth, currentDepth + 1);
                         }
                     }
-                    finally
+                    catch (ArgumentException)
                     {
-                        process.Dispose();
+                        // process might have exited since the snapshot, ignore it
                     }
-                });
+                }
             }
+        }
 
-            if (psi.RedirectStandardInput)
-            {
-                process.StandardInput.Close();
-            }
-
-            return tcs.Task;
+        private static bool IsWindows()
+        {
+#if NETSTANDARD2_0 || NETCOREAPP2_1 || NETCOREAPP3_0
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#elif NET461
+            return true;
+#else
+#error Platform not supported
+#endif
         }
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern int CloseHandle(IntPtr hObject);
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int Process32First(IntPtr handle, ref ProcessEntry32 entry);
+        private static extern int Process32First(SnapshotSafeHandle handle, ref ProcessEntry32 entry);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int Process32Next(IntPtr handle, ref ProcessEntry32 entry);
+        private static extern int Process32Next(SnapshotSafeHandle handle, ref ProcessEntry32 entry);
 
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms682489.aspx
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr CreateToolhelp32Snapshot(SnapshotFlags dwFlags, uint th32ProcessID);
+        private static extern SnapshotSafeHandle CreateToolhelp32Snapshot(SnapshotFlags dwFlags, uint th32ProcessID);
 
         private const int MAX_PATH = 260;
 
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms684839.aspx
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-        private struct ProcessEntry32
+        internal struct ProcessEntry32
         {
 #pragma warning disable IDE1006 // Naming Styles
             public uint dwSize;
             public uint cntUsage;
-            public uint th32ProcessID;
+            public int th32ProcessID;
             public IntPtr th32DefaultHeapID;
             public uint th32ModuleID;
             public uint cntThreads;
-            public uint th32ParentProcessID;
+            public int th32ParentProcessID;
             public int pcPriClassBase;
             public uint dwFlags;
 
@@ -258,7 +243,20 @@ namespace Meziantou.Framework
             TH32CS_SNAPTHREAD = 0x00000004,
             TH32CS_SNAPMODULE = 0x00000008,
             TH32CS_SNAPMODULE32 = 0x00000010,
-            TH32CS_INHERIT = 0x80000000
+            TH32CS_INHERIT = 0x80000000,
+        }
+
+        private sealed class SnapshotSafeHandle : SafeHandleZeroOrMinusOneIsInvalid
+        {
+            public SnapshotSafeHandle()
+                : base(ownsHandle: true)
+            {
+            }
+
+            protected override bool ReleaseHandle()
+            {
+                return CloseHandle(handle);
+            }
         }
     }
 }

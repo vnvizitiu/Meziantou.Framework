@@ -34,7 +34,7 @@ namespace Meziantou.Framework.Scheduling
                 "yyyy-MM-ddTHHzz",
                 "yyyy-MM-ddTHHZ",
                 // Accuracy reduced to date
-                "yyyyMMdd"
+                "yyyyMMdd",
                 };
 
             var dateTime = DateTime.ParseExact(str, formats, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
@@ -43,50 +43,38 @@ namespace Meziantou.Framework.Scheduling
 
         public static string DayOfWeekToString(DayOfWeek dayOfWeek)
         {
-            switch (dayOfWeek)
+            return dayOfWeek switch
             {
-                case DayOfWeek.Sunday:
-                    return "SU";
-                case DayOfWeek.Monday:
-                    return "MO";
-                case DayOfWeek.Tuesday:
-                    return "TU";
-                case DayOfWeek.Wednesday:
-                    return "WE";
-                case DayOfWeek.Thursday:
-                    return "TH";
-                case DayOfWeek.Friday:
-                    return "FR";
-                case DayOfWeek.Saturday:
-                    return "SA";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, null);
-            }
+                DayOfWeek.Sunday => "SU",
+                DayOfWeek.Monday => "MO",
+                DayOfWeek.Tuesday => "TU",
+                DayOfWeek.Wednesday => "WE",
+                DayOfWeek.Thursday => "TH",
+                DayOfWeek.Friday => "FR",
+                DayOfWeek.Saturday => "SA",
+                _ => throw new ArgumentOutOfRangeException(nameof(dayOfWeek), dayOfWeek, message: null),
+            };
         }
 
         public static string DateTimeToString(DateTime dt)
         {
             if (dt.Kind == DateTimeKind.Utc)
             {
-                return dt.ToString(UtcDateTimeFormat);
+                return dt.ToString(UtcDateTimeFormat, CultureInfo.InvariantCulture);
             }
 
-            return dt.ToString(DateTimeFormat);
+            return dt.ToString(DateTimeFormat, CultureInfo.InvariantCulture);
         }
 
         public static string StatusToString(EventStatus status)
         {
-            switch (status)
+            return status switch
             {
-                case EventStatus.Tentative:
-                    return "TENTATIVE";
-                case EventStatus.Confirmed:
-                    return "CONFIRMED";
-                case EventStatus.Cancelled:
-                    return "CANCELLED";
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(status), status, null);
-            }
+                EventStatus.Tentative => "TENTATIVE",
+                EventStatus.Confirmed => "CONFIRMED",
+                EventStatus.Cancelled => "CANCELLED",
+                _ => throw new ArgumentOutOfRangeException(nameof(status), status, message: null),
+            };
         }
     }
 }

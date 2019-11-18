@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -46,7 +47,7 @@ namespace Meziantou.Framework.Html
 
                 return _list.Find(a =>
                     localName.EqualsIgnoreCase(a.LocalName) &&
-                    a.NamespaceURI != null && namespaceURI == a.NamespaceURI);
+                    a.NamespaceURI != null && string.Equals(namespaceURI, a.NamespaceURI, StringComparison.Ordinal));
             }
         }
 
@@ -73,13 +74,13 @@ namespace Meziantou.Framework.Html
                 throw new ArgumentNullException(nameof(oldChild));
 
             if (newChild.ParentNode != null)
-                throw new ArgumentException(null, nameof(newChild));
+                throw new ArgumentException(message: null, nameof(newChild));
 
             var index = _list.IndexOf(oldChild);
             if (index >= 0)
             {
                 if (oldChild.ParentNode != _parent)
-                    throw new ArgumentException(null, nameof(oldChild));
+                    throw new ArgumentException(message: null, nameof(oldChild));
 
                 HtmlDocument.RemoveIntrinsicElement(oldChild.OwnerDocument, oldChild as HtmlElement);
                 oldChild.ParentNode = null;
@@ -87,7 +88,7 @@ namespace Meziantou.Framework.Html
             }
             else
             {
-                throw new ArgumentException(null, nameof(oldChild));
+                throw new ArgumentException(message: null, nameof(oldChild));
             }
 
             _list.Insert(index, newChild);
@@ -107,7 +108,7 @@ namespace Meziantou.Framework.Html
             {
                 HtmlDocument.RemoveIntrinsicElement(node.OwnerDocument, node as HtmlElement);
                 if (node.ParentNode != _parent)
-                    throw new ArgumentException();
+                    throw new InvalidOperationException();
 
                 node.ParentNode = null;
             }
@@ -120,7 +121,7 @@ namespace Meziantou.Framework.Html
                 throw new ArgumentNullException(nameof(item));
 
             if (item.ParentNode != null)
-                throw new ArgumentException(null, nameof(item));
+                throw new ArgumentException(message: null, nameof(item));
 
             HtmlDocument.RemoveIntrinsicElement(item.OwnerDocument, item as HtmlElement);
             _list.Insert(index, item);
@@ -152,7 +153,7 @@ namespace Meziantou.Framework.Html
                 throw new ArgumentNullException(nameof(item));
 
             if (item.ParentNode != null)
-                throw new ArgumentException(null, nameof(item));
+                throw new ArgumentException(message: null, nameof(item));
 
             AddNoCheck(item);
         }
@@ -164,7 +165,7 @@ namespace Meziantou.Framework.Html
 
             var node = _list[index];
             if (node.ParentNode != _parent)
-                throw new ArgumentException(null, nameof(index));
+                throw new ArgumentException(message: null, nameof(index));
 
             HtmlDocument.RemoveIntrinsicElement(node.OwnerDocument, node as HtmlElement);
             node.ParentNode = null;
@@ -176,7 +177,7 @@ namespace Meziantou.Framework.Html
         public bool Remove(HtmlNode item)
         {
             if (item == null)
-                throw new ArgumentNullException("node");
+                throw new ArgumentNullException(nameof(item));
 
             var index = _list.IndexOf(item);
             if (index < 0)
@@ -184,7 +185,7 @@ namespace Meziantou.Framework.Html
 
             var existing = _list[index];
             if (existing.ParentNode != _parent)
-                throw new ArgumentException(null, "node");
+                throw new ArgumentException(message: null, nameof(item));
 
             _list.RemoveAt(index);
             HtmlDocument.RemoveIntrinsicElement(item.OwnerDocument, item as HtmlElement);

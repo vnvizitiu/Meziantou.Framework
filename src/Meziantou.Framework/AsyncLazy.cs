@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,7 +17,7 @@ namespace Meziantou.Framework
     {
         private readonly Func<Task<T>> _valueFactory;
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
-        private T _value;
+        private Task<T>? _value;
 
         public AsyncLazy(Func<Task<T>> valueFactory)
         {
@@ -25,27 +26,41 @@ namespace Meziantou.Framework
 
         public bool HasValue { get; private set; }
 
-        public async Task<T> GetValueAsync()
+        public Task<T> GetValueAsync() => GetValueAsync(CancellationToken.None);
+
+        public Task<T> GetValueAsync(CancellationToken cancellationToken)
         {
             if (HasValue)
+            {
+                Debug.Assert(_value != null);
                 return _value;
+            }
 
-            await _semaphoreSlim.WaitAsync().ConfigureAwait(false);
+            return GetValueCoreAsync(cancellationToken);
+        }
+
+        private async Task<T> GetValueCoreAsync(CancellationToken cancellationToken)
+        {
+            await _semaphoreSlim.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 if (HasValue)
-                    return _value;
+                {
+                    Debug.Assert(_value != null);
+                    return await _value.ConfigureAwait(false);
+                }
 
-                _value = await _valueFactory().ConfigureAwait(false);
+                var value = await _valueFactory().ConfigureAwait(false);
+                _value = Task.FromResult(value);
                 HasValue = true;
-                return _value;
+                return value;
             }
             finally
             {
                 _semaphoreSlim.Release();
             }
         }
-        
+
         public void Dispose()
         {
             _semaphoreSlim.Dispose();

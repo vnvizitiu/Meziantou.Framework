@@ -1,9 +1,10 @@
+﻿#nullable disable
 using System;
 using System.Globalization;
 
 namespace Meziantou.Framework.Html
 {
-    public class HtmlException : Exception
+    public sealed class HtmlException : Exception
     {
         public HtmlException()
             : base("HTML0001: Html exception")
@@ -20,7 +21,7 @@ namespace Meziantou.Framework.Html
         {
         }
 
-        protected HtmlException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+        private HtmlException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context)
         {
         }

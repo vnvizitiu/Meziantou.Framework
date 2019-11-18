@@ -1,11 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Xunit;
 
 namespace Meziantou.Framework.Html.Tests
 {
-    [TestClass]
     public class HtmlNodeDepthComparerTests
     {
-        [TestMethod]
+        [Fact]
         public void Compare_Equals()
         {
             var document = new HtmlDocument();
@@ -14,10 +13,10 @@ namespace Meziantou.Framework.Html.Tests
             var element2 = document.SelectSingleNode("//span[@id='id2']");
 
             var comparer = new HtmlNodeDepthComparer();
-            Assert.AreEqual(0, comparer.Compare(element1, element2));
+            Assert.Equal(0, comparer.Compare(element1, element2));
         }
 
-        [TestMethod]
+        [Fact]
         public void Compare_DirectionAscending_LessThan()
         {
             var document = new HtmlDocument();
@@ -25,13 +24,15 @@ namespace Meziantou.Framework.Html.Tests
             var element1 = document.SelectSingleNode("//span[@id='id1']");
             var element2 = document.SelectSingleNode("//span[@id='id2']");
 
-            var comparer = new HtmlNodeDepthComparer();
-            comparer.Direction = ListSortDirection.Ascending;
-            Assert.AreEqual(-1, comparer.Compare(element1, element2));
-            Assert.AreEqual(1, comparer.Compare(element2, element1));
+            var comparer = new HtmlNodeDepthComparer
+            {
+                Direction = ListSortDirection.Ascending,
+            };
+            Assert.Equal(-1, comparer.Compare(element1, element2));
+            Assert.Equal(1, comparer.Compare(element2, element1));
         }
 
-        [TestMethod]
+        [Fact]
         public void Compare_DirectionDescending_LessThan()
         {
             var document = new HtmlDocument();
@@ -39,10 +40,12 @@ namespace Meziantou.Framework.Html.Tests
             var element1 = document.SelectSingleNode("//span[@id='id1']");
             var element2 = document.SelectSingleNode("//span[@id='id2']");
 
-            var comparer = new HtmlNodeDepthComparer();
-            comparer.Direction = ListSortDirection.Descending;
-            Assert.AreEqual(1, comparer.Compare(element1, element2));
-            Assert.AreEqual(-1, comparer.Compare(element2, element1));
+            var comparer = new HtmlNodeDepthComparer
+            {
+                Direction = ListSortDirection.Descending,
+            };
+            Assert.Equal(1, comparer.Compare(element1, element2));
+            Assert.Equal(-1, comparer.Compare(element2, element1));
         }
     }
 }

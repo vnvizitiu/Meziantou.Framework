@@ -1,4 +1,4 @@
-namespace Meziantou.Framework.Scheduling
+﻿namespace Meziantou.Framework.Scheduling
 {
     public enum Month
     {
@@ -13,6 +13,6 @@ namespace Meziantou.Framework.Scheduling
         September,
         October,
         November,
-        December
+        December,
     }
 }
